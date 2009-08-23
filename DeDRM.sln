@@ -5,6 +5,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Drm", "Drm\Drm.csproj", "{9
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Win32Interop", "Win32Interop\Win32Interop.csproj", "{CAB55687-AE45-4262-94D1-1CC271261546}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimpleLauncher", "SimpleLauncher\SimpleLauncher.csproj", "{994DDFB3-C4E9-4DE4-AD08-A1D0B56702AD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Drm.Tests", "Drm.Tests\Drm.Tests.csproj", "{ECF6049A-E49A-45BC-A119-73A96DE86BB2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -19,6 +23,13 @@ Global
 		{CAB55687-AE45-4262-94D1-1CC271261546}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CAB55687-AE45-4262-94D1-1CC271261546}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CAB55687-AE45-4262-94D1-1CC271261546}.Release|Any CPU.Build.0 = Release|Any CPU
+		{994DDFB3-C4E9-4DE4-AD08-A1D0B56702AD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{994DDFB3-C4E9-4DE4-AD08-A1D0B56702AD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{994DDFB3-C4E9-4DE4-AD08-A1D0B56702AD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{994DDFB3-C4E9-4DE4-AD08-A1D0B56702AD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ECF6049A-E49A-45BC-A119-73A96DE86BB2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ECF6049A-E49A-45BC-A119-73A96DE86BB2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ECF6049A-E49A-45BC-A119-73A96DE86BB2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
