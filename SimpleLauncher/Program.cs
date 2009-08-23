@@ -1,15 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using Drm.Adept;
 
 namespace SimpleLauncher
 {
-	class Program
+	internal class Program
 	{
-		static void Main(string[] args)
+		private static void Main(string[] args)
 		{
-			Drm.Adept.KeyRetriever.Retrieve();
+			byte[] key = KeyRetriever.Retrieve();
+			Epub.Strip(key, @"D:\Documents\My Digital Editions\Shadowed_By_Wings.epub", @"C:\Users\13xforever\Desktop\out2.epub");
 		}
 	}
 }
