@@ -15,16 +15,19 @@ namespace Drm.Adept
 
 		private static RsaEngine GetRsaEngine(byte[] key)
 		{
-			var reader = new Asn1InputStream(key);
-			var o = (Asn1Sequence)reader.ReadObject();
-			BigInteger n = ((DerInteger)o[1]).Value;
-			BigInteger e = ((DerInteger)o[2]).Value;
-			BigInteger d = ((DerInteger)o[3]).Value;
-			BigInteger p = ((DerInteger)o[4]).Value;
-			BigInteger q = ((DerInteger)o[5]).Value;
-			BigInteger dP = ((DerInteger)o[6]).Value;
-			BigInteger dQ = ((DerInteger)o[7]).Value;
-			BigInteger qInv = ((DerInteger)o[8]).Value;
+			//Org.BouncyCastle.Security.PrivateKeyFactory.CreateKey()
+			var rsaPrivateKey = (Asn1Sequence)new Asn1InputStream(key).ReadObject();
+
+			//http://tools.ietf.org/html/rfc3447#page-60
+			//version = rsaPrivateKey[0]
+			BigInteger n = ((DerInteger)rsaPrivateKey[1]).Value;
+			BigInteger e = ((DerInteger)rsaPrivateKey[2]).Value;
+			BigInteger d = ((DerInteger)rsaPrivateKey[3]).Value;
+			BigInteger p = ((DerInteger)rsaPrivateKey[4]).Value;
+			BigInteger q = ((DerInteger)rsaPrivateKey[5]).Value;
+			BigInteger dP = ((DerInteger)rsaPrivateKey[6]).Value;
+			BigInteger dQ = ((DerInteger)rsaPrivateKey[7]).Value;
+			BigInteger qInv = ((DerInteger)rsaPrivateKey[8]).Value;
 			var rsa = new RsaEngine();
 			rsa.Init(false, new RsaPrivateCrtKeyParameters(n, e, d, p, q, dP, dQ, qInv));
 			return rsa;
