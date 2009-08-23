@@ -13,7 +13,7 @@ namespace Drm.Adept
 		public static byte[] Retrieve()
 		{
 			ulong systemDriveSerial = GetSystemDriveSerialNumber();
-			var cpuInfo = GetCpuInfo();
+			CpuInfo cpuInfo = GetCpuInfo();
 			string username = Environment.UserName;
 			byte[] entropy = MakeEntropy(systemDriveSerial, cpuInfo, username);
 			byte[] deviceKeyData;
@@ -41,11 +41,19 @@ namespace Drm.Adept
 			{
 				if (activationKey == null) throw new InvalidOperationException("ADE activation is corrupted or absent.");
 				foreach (var subKeyName in activationKey.GetSubKeyNames())
-					using (var subKey = activationKey.OpenSubKey(subKeyName))
+				{
+					using (RegistryKey subKey = activationKey.OpenSubKey(subKeyName))
+					{
 						foreach (var keyName in subKey.GetSubKeyNames())
-							using (var key = subKey.OpenSubKey(keyName))
+						{
+							using (RegistryKey key = subKey.OpenSubKey(keyName))
+							{
 								if (key.GetValue("").ToString() == "privateLicenseKey")
 									return Convert.FromBase64String((string)key.GetValue("value"));
+							}
+						}
+					}
+				}
 			}
 			throw new InvalidOperationException("Couldn't find private license key!");
 		}
@@ -93,14 +101,14 @@ namespace Drm.Adept
 		}
 
 		private static readonly Regex HexString = new Regex(@"\A\b[0-9a-fA-F]+\b\Z");
-		private const string DeviceKey = "Software\\Adobe\\Adept\\Device";
-		private const string ActivationKey = "Software\\Adobe\\Adept\\Activation";
 
 		private class CpuInfo
 		{
-
 			public string vendor;
 			public readonly byte[] familyModelStepping = new byte[3];
 		}
+
+		private const string DeviceKey = "Software\\Adobe\\Adept\\Device";
+		private const string ActivationKey = "Software\\Adobe\\Adept\\Activation";
 	}
 }
