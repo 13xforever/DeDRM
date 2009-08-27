@@ -1,4 +1,9 @@
+using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Xml.XPath;
+using Ionic.Zip;
 using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Crypto.Engines;
 using Org.BouncyCastle.Crypto.Parameters;
@@ -11,6 +16,24 @@ namespace Drm.Adept
 		public static void Strip(byte[] key, string ebookPath, string output)
 		{
 			RsaEngine rsa = GetRsaEngine(key);
+
+			using (var zip = new ZipFile(ebookPath))
+			{
+				var metaNames = zip.Entries.Where(e => META_NAMES.Contains(e.FileName));
+				if (metaNames.Count() != META_NAMES.Count)
+					throw new ArgumentException("Not an ADEPT ePub.", "ebookPath");
+				var entriesToDecrypt = zip.Entries.Except(metaNames);
+
+				XPathDocument xml;
+				using (var s = new MemoryStream())
+				{
+					ZipEntry rightsEntry = zip.Entries.Where(ze => ze.FileName == "META-INF/rights.xml").First();
+					rightsEntry.Extract(s);
+					s.Seek(0, SeekOrigin.Begin);
+					xml = new XPathDocument(s);
+				}
+				XPathNodeIterator node = xml.CreateNavigator().Select("rights/licenseToken/encryptedKey");
+			}
 		}
 
 		private static RsaEngine GetRsaEngine(byte[] key)
@@ -33,7 +56,7 @@ namespace Drm.Adept
 			return rsa;
 		}
 
-		private static readonly List<string> META_NAMES = new List<string> {"mimetype", "META-INF/rights.xml", "META-INF/encryption.xml"};
+		private static readonly HashSet<string> META_NAMES = new HashSet<string> {"mimetype", "META-INF/rights.xml", "META-INF/encryption.xml"};
 		private static readonly Dictionary<string, string> NSMAP = new Dictionary<string, string>
 			{
 				{"adept", "http://ns.adobe.com/adept"},
