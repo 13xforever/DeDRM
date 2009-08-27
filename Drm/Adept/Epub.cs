@@ -16,7 +16,6 @@ namespace Drm.Adept
 		public static void Strip(byte[] key, string ebookPath, string output)
 		{
 			RsaEngine rsa = GetRsaEngine(key);
-
 			using (var zip = new ZipFile(ebookPath))
 			{
 				var metaNames = zip.Entries.Where(e => META_NAMES.Contains(e.FileName));
@@ -32,7 +31,11 @@ namespace Drm.Adept
 					s.Seek(0, SeekOrigin.Begin);
 					xml = new XPathDocument(s);
 				}
-				XPathNodeIterator node = xml.CreateNavigator().Select("rights/licenseToken/encryptedKey");
+				var node = xml.CreateNavigator().Select("rights/licenseToken/encryptedKey");
+				string base64Key = "qX5AfredAVAVKhcuZlyObk4uB5ZQdAGaO4LY5CzIiLWOJmpk/pEmpD+EYkmW+sHAzamn3lKQcgp7wsFVRIun3Z" +
+				                   "NM0vL4b+4o5N++acFHLFK6hAUk/g6a3IZqAwhebG1E9EmuXRrhpScfua2W/u0OU5rfERC6q2H2SEQkHXpDR94=";
+				var contentKey = Convert.FromBase64String(base64Key);
+				contentKey = rsa.ProcessBlock(contentKey, 0, contentKey.Length); //\x02j\x92\xd1r`\xf0\t\xfd\x...hY\xba\xa0\xfc\x82\xd8q\xcf<
 			}
 		}
 
