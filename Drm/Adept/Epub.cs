@@ -15,6 +15,11 @@ namespace Drm.Adept
 {
 	public static class Epub
 	{
+		public static void Strip(string ebookPath, string output)
+		{
+			Strip(KeyRetriever.Retrieve(), ebookPath, output);
+		}
+
 		public static void Strip(byte[] key, string ebookPath, string output)
 		{
 			RsaEngine rsa = GetRsaEngine(key);
@@ -31,13 +36,15 @@ namespace Drm.Adept
 					ZipEntry rightsEntry = zip.Entries.Where(ze => ze.FileName == "META-INF/rights.xml").First();
 					rightsEntry.Extract(s);
 					s.Seek(0, SeekOrigin.Begin);
-					using (var reader = XmlReader.Create(s))
-					xml = XDocument.Load(reader);
+					using (var reader = XmlReader.Create(s)) xml = XDocument.Load(reader);
 				}
-				var ns = xml.Root.GetDefaultNamespace();
-				string base64Key = "qX5AfredAVAVKhcuZlyObk4uB5ZQdAGaO4LY5CzIiLWOJmpk/pEmpD+EYkmW+sHAzamn3lKQcgp7wsFVRIun3Z" +
-				                   "NM0vL4b+4o5N++acFHLFK6hAUk/g6a3IZqAwhebG1E9EmuXRrhpScfua2W/u0OU5rfERC6q2H2SEQkHXpDR94=";
-				var contentKey = Convert.FromBase64String(base64Key);
+				//var base64Key = xml.Descendants().Where(el => el.Name.LocalName == "encryptedKey").Where(el => el.Name.Namespace == NSMAP["adept"]).FirstOrDefault();
+				var base64Key = (from el in xml.Descendants()
+				                 where el.Name.LocalName == "encryptedKey"
+				                 where el.Name.Namespace == NSMAP["adept"]
+				                 select el).FirstOrDefault();
+				if (base64Key == null) throw new InvalidOperationException("Can't find encryption key for book.");
+				var contentKey = Convert.FromBase64String(base64Key.Value);
 				contentKey = rsa.ProcessBlock(contentKey, 0, contentKey.Length); //\x02j\x92\xd1r`\xf0\t\xfd\x...hY\xba\xa0\xfc\x82\xd8q\xcf<
 			}
 		}
