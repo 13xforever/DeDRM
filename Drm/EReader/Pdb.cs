@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Drm.Utils;
 
 namespace Drm.EReader
 {
@@ -49,7 +50,7 @@ namespace Drm.EReader
 				stream.Read(buf, 0, 4);
 				if (BitConverter.IsLittleEndian) buf = buf.Reverse().ToArray();
 				uniqueIdSeed = BitConverter.ToInt32(buf, 0);
-				stream.Read(buf, 0, 4); //nextRecordListID = allways 0x00000000
+				stream.Read(buf, 0, 4); //nextRecordListID = always 0x00000000
 				buf = new byte[2];
 				stream.Read(buf, 0, 2);
 				if (BitConverter.IsLittleEndian) buf = buf.Reverse().ToArray();
@@ -61,34 +62,25 @@ namespace Drm.EReader
 					stream.Read(buf, 0, 8);
 					records.Add(new RecordInfoEntry(buf));
 				}
-				if (appInfoOffset != 0) appInfo = ReadAppInfo(stream);
-				if (sortInfoOffset != 0) sortInfo = ReadSortInfo(stream);
+				if (appInfoOffset != 0) appInfo = ReadAppInfo(stream, appInfoOffset);
+				if (sortInfoOffset != 0) sortInfo = ReadSortInfo(stream, sortInfoOffset);
 			}
 		}
 
-		public static void Strip(string ebookPath, string outputDir, string name, string ccNumber)
+		public byte[] GetSectionData(int sectionNumber)
 		{
-			var sect = new Sectionizer(ebookPath, "PNRdPPrs");
-			var processor = new EreaderProcessor(sect, name, ccNumber);
-			if (!Directory.Exists(outputDir)) Directory.CreateDirectory(outputDir);
-			string path;
-			for (int i = 0; i < processor.NumImages; i++)
-			{
-				ImageInfo img = processor.GetImage(i);
-				path = Path.Combine(outputDir, img.filename);
-				using (FileStream stream = File.Create(path)) stream.Write(img.content, 0, img.content.Length);
-			}
-			string pml = processor.GetText();
-			path = Path.Combine(outputDir, Path.GetFileNameWithoutExtension(ebookPath) + ".pml");
-			using (StreamWriter stream = File.CreateText(path)) stream.Write(pml);
+			long endOfSectionOffset = sectionNumber + 1 == numberOfRecords ? rawData.Length : records[sectionNumber + 1].offset;
+			long startOfSectionOffset = records[sectionNumber].offset;
+			return rawData.SubRange(startOfSectionOffset, endOfSectionOffset);
 		}
+
 
 		public string Filename { get { return filename; } }
 		public PdbAttributes Attributes { get { return attributes; } }
 		public int FileVersion { get { return fileVersion; } }
-		public DateTime CreationDate { get { return new DateTime(1904, 1, 1).AddSeconds(creationDate); } }
-		public DateTime ModificationDate { get { return new DateTime(1904, 1, 1).AddSeconds(modificationDate); } }
-		public DateTime LastBackupDate { get { return new DateTime(1904, 1, 1).AddSeconds(lastBackupDate); } }
+		public DateTime CreationDate { get { return PalmTimeToDateTime(creationDate); } }
+		public DateTime ModificationDate { get { return PalmTimeToDateTime(modificationDate); } }
+		public DateTime LastBackupDate { get { return PalmTimeToDateTime(lastBackupDate); } }
 		public int ModificationNumber { get { return modificationNumber; } }
 		public AppInfo AppInfo { get { return appInfo; } }
 		public SortInfo SortInfo { get { return sortInfo; } }
@@ -98,14 +90,21 @@ namespace Drm.EReader
 		public int NumberOfRecords { get { return numberOfRecords; } }
 		public List<RecordInfoEntry> Records { get { return records; } }
 
-		private SortInfo ReadSortInfo(MemoryStream stream)
+		private static DateTime PalmTimeToDateTime(long palmTime)
 		{
-			throw new NotImplementedException();
+			int startDate = 1904;
+			if ((palmTime & 0x80000000) > 0) startDate = 1970;
+			return new DateTime(startDate, 1, 1).AddSeconds(palmTime);
 		}
 
-		private AppInfo ReadAppInfo(MemoryStream stream)
+		private static SortInfo ReadSortInfo(MemoryStream stream, long offset)
 		{
-			throw new NotImplementedException();
+			return null; //todo: find info
+		}
+
+		private static AppInfo ReadAppInfo(MemoryStream stream, long offset)
+		{
+			return null; //todo: find info
 		}
 
 		private readonly byte[] rawData;

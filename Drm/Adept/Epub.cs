@@ -6,6 +6,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Xml;
 using System.Xml.XPath;
+using Drm.Utils;
 using Ionic.Zip;
 using Ionic.Zlib;
 using Org.BouncyCastle.Asn1;
@@ -41,7 +42,7 @@ namespace Drm.Adept
 				var nsm = new XmlNamespaceManager(navigator.NameTable);
 				nsm.AddNamespace("a", "http://ns.adobe.com/adept");
 				nsm.AddNamespace("e", "http://www.w3.org/2001/04/xmlenc#");
-				var node = navigator.SelectSingleNode("//a:encryptedKey[1]", nsm);
+				XPathNavigator node = navigator.SelectSingleNode("//a:encryptedKey[1]", nsm);
 				if (node == null) throw new InvalidOperationException("Can't find session key.");
 				string base64Key = node.Value;
 				byte[] contentKey = Convert.FromBase64String(base64Key);
@@ -56,24 +57,24 @@ namespace Drm.Adept
 					s.Seek(0, SeekOrigin.Begin);
 					navigator = new XPathDocument(s).CreateNavigator();
 				}
-				var contentLinks = navigator.Select("//e:EncryptedData", nsm);
+				XPathNodeIterator contentLinks = navigator.Select("//e:EncryptedData", nsm);
 				var encryptedEntryies = new Dictionary<string, string>(contentLinks.Count);
 				foreach (XPathNavigator link in contentLinks)
 				{
-					var em = link.SelectSingleNode("./e:EncryptionMethod/@Algorithm", nsm).Value;
-					var path = link.SelectSingleNode("./e:CipherData/e:CipherReference/@URI", nsm).Value;
+					string em = link.SelectSingleNode("./e:EncryptionMethod/@Algorithm", nsm).Value;
+					string path = link.SelectSingleNode("./e:CipherData/e:CipherReference/@URI", nsm).Value;
 					encryptedEntryies[path] = em;
 				}
-				var unknownAlgos = encryptedEntryies.Values.Where(ns => ns != "http://www.w3.org/2001/04/xmlenc#aes128-cbc").Distinct().ToArray();
+				string[] unknownAlgos = encryptedEntryies.Values.Where(ns => ns != "http://www.w3.org/2001/04/xmlenc#aes128-cbc").Distinct().ToArray();
 				if (unknownAlgos.Length > 0)
 					throw new InvalidOperationException("This ebook uses unsupported encryption method(s): " + string.Join(", ", unknownAlgos));
-				
+
 				using (var cipher = new AesManaged {Mode = CipherMode.CBC, Key = bookkey})
 				using (var output = new ZipFile(Encoding.UTF8))
 				{
 					output.UseZip64WhenSaving = Zip64Option.Never;
 					output.ForceNoCompression = true;
-					using(var s = new MemoryStream())
+					using (var s = new MemoryStream())
 					{
 						zip["mimetype"].Extract(s);
 						output.AddEntry("mimetype", null, s.ToArray());
@@ -90,7 +91,7 @@ namespace Drm.Adept
 						}
 						if (encryptedEntryies.ContainsKey(file.FileName))
 						{
-							var gzippedFile = cipher.CreateDecryptor().TransformFinalBlock(data, 0, data.Length).Skip(16).ToArray();
+							byte[] gzippedFile = cipher.CreateDecryptor().TransformFinalBlock(data, 0, data.Length).Skip(16).ToArray();
 							using (var inStream = new MemoryStream(gzippedFile))
 							using (var zipStream = new DeflateStream(inStream, CompressionMode.Decompress))
 							using (var outStream = new MemoryStream())
@@ -104,13 +105,6 @@ namespace Drm.Adept
 					output.Save(outputPath);
 				}
 			}
-		}
-
-		private static void CopyTo(this Stream input, Stream output)
-		{
-			var buf = new byte[4096];
-			int read;
-			while((read = input.Read(buf, 0, buf.Length)) > 0) output.Write(buf, 0, read);
 		}
 
 		private static RsaEngine GetRsaEngine(byte[] key)
