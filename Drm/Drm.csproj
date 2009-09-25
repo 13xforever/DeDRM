@@ -57,9 +57,11 @@
   <ItemGroup>
     <Compile Include="Adept\Epub.cs" />
     <Compile Include="Adept\KeyRetriever.cs" />
+    <Compile Include="EReader\EReaderAttributes.cs" />
+    <Compile Include="EReader\EReaderHeader.cs" />
     <Compile Include="EReader\EReaderProcessor.cs" />
-    <Compile Include="EReader\RecordInfoEntry.cs" />
-    <Compile Include="EReader\ImageInfo.cs" />
+    <Compile Include="EReader\PdbRecordInfo.cs" />
+    <Compile Include="EReader\EReaderImageInfo.cs" />
     <Compile Include="EReader\Pdb.cs" />
     <Compile Include="EReader\PdbAttributes.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

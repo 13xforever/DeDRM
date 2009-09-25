@@ -4,9 +4,9 @@ using System.Text;
 
 namespace Drm.EReader
 {
-	internal class ImageInfo
+	internal class EReaderImageInfo
 	{
-		public ImageInfo(string filename, byte[] content)
+		public EReaderImageInfo(string filename, byte[] content)
 		{
 			this.filename = SanitizeFilename(filename);
 			this.content = content;

@@ -10,22 +10,24 @@ namespace Drm.EReader
 {
 	public class EReaderProcessor
 	{
-		private EReaderProcessor(Pdb sectionHandler, string name, string ccNumber)
+		private EReaderProcessor(Pdb pdb, string name, string ccNumber)
 		{
-			sectionizer = sectionHandler;
-			byte[] formatVersion = sectionizer.GetSectionData(0);
+			if (!(pdb.Filetype == "PNRd" && pdb.Creator == "PPrs")) throw new FormatException("Invalid eReader file.");
+			pdbReader = pdb;
+			byte[] formatVersion = pdbReader.GetSectionData(0);
+			var eReaderHeader = new EReaderHeader(formatVersion);
 			var version = (ushort)(formatVersion[0] << 8 | formatVersion[1]);
 			if (!(version == 260 || version == 272)) throw new InvalidOperationException(string.Format("Unsupported version of eReader: {0}!", version));
-			data = sectionizer.GetSectionData(1);
+			data = pdbReader.GetSectionData(1);
 			ICryptoTransform desEngine = GetDesEngine(data.Copy(0, 8));
 			byte[] decryptedData = desEngine.TransformFinalBlock(data.Copy(-8), 0, 8);
 			int cookieShuf = decryptedData[0] << 24 | decryptedData[1] << 16 | decryptedData[2] << 8 | decryptedData[3];
 			int cookieSize = decryptedData[4] << 24 | decryptedData[5] << 16 | decryptedData[6] << 8 | decryptedData[7];
 			if (cookieShuf < 0x03 || cookieShuf > 0x14 || cookieSize < 0xf0 || cookieSize > 0x200) throw new InvalidOperationException("Unsupportd eReader format");
-			byte[] input = desEngine.TransformFinalBlock(data.Skip(data.Length - cookieSize).ToArray(), 0, cookieSize);
-			byte[] r = UnshuffData(input.Take(input.Length - 8).ToArray(), cookieShuf);
+			byte[] input = desEngine.TransformFinalBlock(data.Copy(-cookieSize), 0, cookieSize);
+			byte[] r = UnshuffData(input.SubRange(0, -8), cookieShuf);
 			byte[] userKeyPart1 = Encoding.ASCII.GetBytes(FixUserName(name));
-			byte[] userKeyPart2 = Encoding.ASCII.GetBytes(ccNumber.Skip(ccNumber.Length - 8).ToArray());
+			byte[] userKeyPart2 = Encoding.ASCII.GetBytes(ccNumber.ToCharArray().Copy(-8));
 			long userKey;
 			using (var stream1 = new MemoryStream(userKeyPart1))
 			using (var stream2 = new MemoryStream(userKeyPart2))
@@ -40,20 +42,20 @@ namespace Drm.EReader
 			numImagePages = (ushort)(r[26] << 8 | r[27]);
 			if ((flags & ReqdFlags) != ReqdFlags) throw new InvalidOperationException(string.Format("Unsupported flags combination: {0:x8}", flags));
 			byte[] userKeyArray = BitConverter.GetBytes(userKey);
-			if (BitConverter.IsLittleEndian) userKeyArray = userKeyArray.Reverse().ToArray();
+			if (BitConverter.IsLittleEndian) userKeyArray = userKeyArray.Reverse();
 			desEngine = GetDesEngine(userKeyArray);
 			byte[] encryptedKey = new byte[0],
 			       encryptedKeySha = new byte[0];
 			if (version == 260)
 			{
 				if (drmSubVersion != 13) throw new InvalidOperationException(string.Format("Unknown eReader DRM subversion ID: {0}", drmSubVersion));
-				encryptedKey = r.Skip(48).Take(8).ToArray();
-				encryptedKeySha = r.Skip(52).Take(20).ToArray();
+				encryptedKey = r.Copy(48, 8);
+				encryptedKeySha = r.Copy(52, 20);
 			}
 			else if (version == 272)
 			{
-				encryptedKey = r.Skip(172).Take(8).ToArray();
-				encryptedKeySha = r.Skip(56).Take(20).ToArray();
+				encryptedKey = r.Copy(172, 8);
+				encryptedKeySha = r.Copy(56, 20);
 			}
 			contentKey = desEngine.TransformFinalBlock(encryptedKey, 0, encryptedKey.Length);
 			byte[] checkHash = SHA1.Create().ComputeHash(contentKey);
@@ -64,28 +66,28 @@ namespace Drm.EReader
 		public static void Strip(string ebookPath, string outputDir, string name, string ccNumber)
 		{
 			var ebook = new Pdb(ebookPath);
-			if (!(ebook.Filetype == "PNRd" && ebook.Creator == "PPrs")) throw new FormatException("Invalid eReader file.");
 
 			var processor = new EReaderProcessor(ebook, name, ccNumber);
+			outputDir = Path.Combine(outputDir, ebook.Filename);
 			if (!Directory.Exists(outputDir)) Directory.CreateDirectory(outputDir);
 			string path;
 			for (int i = 0; i < processor.numImagePages; i++)
 			{
-				ImageInfo img = processor.GetImage(i);
+				EReaderImageInfo img = processor.GetImage(i);
 				path = Path.Combine(outputDir, img.filename);
 				using (FileStream stream = File.Create(path)) stream.Write(img.content, 0, img.content.Length);
 			}
 			string pml = processor.GetText();
-			path = Path.Combine(outputDir, Path.GetFileNameWithoutExtension(ebookPath) + ".pml");
+			path = Path.Combine(outputDir, ebook.Filename + ".pml");
 			using (StreamWriter stream = File.CreateText(path)) stream.Write(pml);
 		}
 
-		private ImageInfo GetImage(int imageNumber)
+		private EReaderImageInfo GetImage(int imageNumber)
 		{
-			byte[] sect = sectionizer.GetSectionData(firstImagePage + imageNumber);
+			byte[] sect = pdbReader.GetSectionData(firstImagePage + imageNumber);
 			string name = Encoding.ASCII.GetString(sect.Skip(4).TakeWhile(b => b > 0).ToArray());
-			byte[] content = sect.Skip(62).ToArray();
-			return new ImageInfo(name, content);
+			byte[] content = sect.Copy(62);
+			return new EReaderImageInfo(name, content);
 		}
 
 		private string GetText()
@@ -93,7 +95,7 @@ namespace Drm.EReader
 			var r = new StringBuilder(numTextPages);
 			for (int i = 1; i <= numTextPages; i++)
 			{
-				byte[] encryptedSection = sectionizer.GetSectionData(i);
+				byte[] encryptedSection = pdbReader.GetSectionData(i);
 				byte[] decryptedSection = contentDecryptor.TransformFinalBlock(encryptedSection, 0, encryptedSection.Length);
 				byte[] decompressedSection;
 				using (var inStream = new MemoryStream(decryptedSection))
@@ -146,7 +148,7 @@ namespace Drm.EReader
 			return r.ToString();
 		}
 
-		private readonly Pdb sectionizer;
+		private readonly Pdb pdbReader;
 		private readonly byte[] data;
 		private readonly int numTextPages;
 		private readonly int numImagePages;

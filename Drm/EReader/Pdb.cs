@@ -19,48 +19,48 @@ namespace Drm.EReader
 				filename = Encoding.ASCII.GetString(buf.TakeWhile(b => b > 0).ToArray());
 				buf = new byte[2];
 				stream.Read(buf, 0, 2);
-				if (BitConverter.IsLittleEndian) buf = buf.Reverse().ToArray();
+				if (BitConverter.IsLittleEndian) buf = buf.Reverse();
 				attributes = (PdbAttributes)BitConverter.ToUInt16(buf, 0);
 				stream.Read(buf, 0, 2);
-				if (BitConverter.IsLittleEndian) buf = buf.Reverse().ToArray();
+				if (BitConverter.IsLittleEndian) buf = buf.Reverse();
 				fileVersion = BitConverter.ToUInt16(buf, 0);
 				buf = new byte[4];
 				stream.Read(buf, 0, 4);
-				if (BitConverter.IsLittleEndian) buf = buf.Reverse().ToArray();
+				if (BitConverter.IsLittleEndian) buf = buf.Reverse();
 				creationDate = BitConverter.ToUInt32(buf, 0);
 				stream.Read(buf, 0, 4);
-				if (BitConverter.IsLittleEndian) buf = buf.Reverse().ToArray();
+				if (BitConverter.IsLittleEndian) buf = buf.Reverse();
 				modificationDate = BitConverter.ToUInt32(buf, 0);
 				stream.Read(buf, 0, 4);
-				if (BitConverter.IsLittleEndian) buf = buf.Reverse().ToArray();
+				if (BitConverter.IsLittleEndian) buf = buf.Reverse();
 				lastBackupDate = BitConverter.ToUInt32(buf, 0);
 				stream.Read(buf, 0, 4);
-				if (BitConverter.IsLittleEndian) buf = buf.Reverse().ToArray();
+				if (BitConverter.IsLittleEndian) buf = buf.Reverse();
 				modificationNumber = BitConverter.ToInt32(buf, 0);
 				stream.Read(buf, 0, 4);
-				if (BitConverter.IsLittleEndian) buf = buf.Reverse().ToArray();
+				if (BitConverter.IsLittleEndian) buf = buf.Reverse();
 				long appInfoOffset = BitConverter.ToUInt32(buf, 0);
 				stream.Read(buf, 0, 4);
-				if (BitConverter.IsLittleEndian) buf = buf.Reverse().ToArray();
+				if (BitConverter.IsLittleEndian) buf = buf.Reverse();
 				long sortInfoOffset = BitConverter.ToUInt32(buf, 0);
 				stream.Read(buf, 0, 4);
 				filetype = Encoding.ASCII.GetString(buf);
 				stream.Read(buf, 0, 4);
 				creator = Encoding.ASCII.GetString(buf);
 				stream.Read(buf, 0, 4);
-				if (BitConverter.IsLittleEndian) buf = buf.Reverse().ToArray();
+				if (BitConverter.IsLittleEndian) buf = buf.Reverse();
 				uniqueIdSeed = BitConverter.ToInt32(buf, 0);
 				stream.Read(buf, 0, 4); //nextRecordListID = always 0x00000000
 				buf = new byte[2];
 				stream.Read(buf, 0, 2);
-				if (BitConverter.IsLittleEndian) buf = buf.Reverse().ToArray();
+				if (BitConverter.IsLittleEndian) buf = buf.Reverse();
 				numberOfRecords = BitConverter.ToUInt16(buf, 0);
-				records = new List<RecordInfoEntry>(numberOfRecords);
+				records = new List<PdbRecordInfo>(numberOfRecords);
 				buf = new byte[8];
 				for (int i = 0; i < numberOfRecords; i++)
 				{
 					stream.Read(buf, 0, 8);
-					records.Add(new RecordInfoEntry(buf));
+					records.Add(new PdbRecordInfo(buf));
 				}
 				if (appInfoOffset != 0) appInfo = ReadAppInfo(stream, appInfoOffset);
 				if (sortInfoOffset != 0) sortInfo = ReadSortInfo(stream, sortInfoOffset);
@@ -88,7 +88,7 @@ namespace Drm.EReader
 		public string Filetype { get { return filetype; } }
 		public int UniqueIdSeed { get { return uniqueIdSeed; } }
 		public int NumberOfRecords { get { return numberOfRecords; } }
-		public List<RecordInfoEntry> Records { get { return records; } }
+		public List<PdbRecordInfo> Records { get { return records; } }
 
 		private static DateTime PalmTimeToDateTime(long palmTime)
 		{
@@ -119,7 +119,7 @@ namespace Drm.EReader
 		private readonly string creator;
 		private readonly int uniqueIdSeed;
 		private readonly int numberOfRecords;
-		private readonly List<RecordInfoEntry> records;
+		private readonly List<PdbRecordInfo> records;
 		private readonly AppInfo appInfo;
 		private readonly SortInfo sortInfo;
 	}

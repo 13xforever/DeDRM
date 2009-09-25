@@ -3,20 +3,20 @@ using System.Linq;
 
 namespace Drm.EReader
 {
-	public class RecordInfoEntry
+	public class PdbRecordInfo
 	{
 		public readonly long offset;
 		public readonly PdbRecordAttributes flags;
 		public readonly int uniqueId;
 
-		public RecordInfoEntry(long offset, byte flags, int uniqueId)
+		public PdbRecordInfo(long offset, byte flags, int uniqueId)
 		{
 			this.offset = offset;
 			this.flags = (PdbRecordAttributes)(flags >> 4 & 0x0f);
 			this.uniqueId = uniqueId;
 		}
 
-		public RecordInfoEntry(byte[] bytes)
+		public PdbRecordInfo(byte[] bytes)
 		{
 			if (bytes.Length != 8) throw new ArgumentException("Invalid data", "bytes");
 			var offsetData = bytes.Take(4);
