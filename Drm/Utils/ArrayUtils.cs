@@ -37,7 +37,7 @@ namespace Drm.Utils
 		public static T[] SubRange<T>(this T[] source, long from, long to)
 		{
 			if (from < 0) from = source.LongLength + from;
-			if (to < 0) to = source.LongLength + from;
+			if (to < 0) to = source.LongLength + to;
 
 			if (from < 0) throw new ArgumentOutOfRangeException("from");
 			if (to > source.LongLength) throw new ArgumentOutOfRangeException("to");
