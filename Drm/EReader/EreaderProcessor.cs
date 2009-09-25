@@ -85,7 +85,7 @@ namespace Drm.EReader
 					zipStream.CopyTo(outStream);
 					decompressedSection = outStream.ToArray();
 				}
-				string text = Encoding.ASCII.GetString(decompressedSection);
+				string text = Encoding.GetEncoding(1252).GetString(decompressedSection);
 				r.Append(text);
 			}
 			return r.ToString();
