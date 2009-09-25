@@ -57,13 +57,13 @@
   <ItemGroup>
     <Compile Include="Adept\Epub.cs" />
     <Compile Include="Adept\KeyRetriever.cs" />
+    <Compile Include="EReader\EreaderProcessor.cs" />
+    <Compile Include="EReader\HeaderEntry.cs" />
+    <Compile Include="EReader\ImageInfo.cs" />
+    <Compile Include="EReader\Pdb.cs" />
+    <Compile Include="EReader\Sectionizer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Win32Interop\Win32Interop.csproj">
-      <Project>{CAB55687-AE45-4262-94D1-1CC271261546}</Project>
-      <Name>Win32Interop</Name>
-    </ProjectReference>
+    <Compile Include="Utils.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

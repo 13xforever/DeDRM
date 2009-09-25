@@ -92,12 +92,12 @@ namespace Drm.Adept
 						{
 							var gzippedFile = cipher.CreateDecryptor().TransformFinalBlock(data, 0, data.Length).Skip(16).ToArray();
 							using (var inStream = new MemoryStream(gzippedFile))
-								using (var zipStream = new DeflateStream(inStream, CompressionMode.Decompress))
-									using (var outStream = new MemoryStream())
-									{
-										zipStream.CopyTo(outStream);
-										data = outStream.ToArray();
-									}
+							using (var zipStream = new DeflateStream(inStream, CompressionMode.Decompress))
+							using (var outStream = new MemoryStream())
+							{
+								zipStream.CopyTo(outStream);
+								data = outStream.ToArray();
+							}
 						}
 						output.AddEntry(file.FileName, null, data);
 					}
