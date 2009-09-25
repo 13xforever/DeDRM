@@ -9,21 +9,14 @@ namespace Drm.EReader
 	internal class Sectionizer
 	{
 		private readonly byte[] content;
-		private readonly List<HeaderEntry> sectionList = new List<HeaderEntry>();
+		private readonly List<RecordInfoEntry> sectionList = new List<RecordInfoEntry>();
 		private readonly ushort sectionCount;
 
 		public Sectionizer(string path, string signature)
 		{
-			using (FileStream stream = File.OpenRead(path))
-			{
-				using (var memStream = new MemoryStream())
-				{
-					stream.CopyTo(memStream);
-					content = memStream.ToArray();
-				}
-			}
+			content = File.ReadAllBytes(path);
 			sectionCount = (ushort)(content[76] << 8 | content[77]);
-			sectionList = new List<HeaderEntry>(sectionCount);
+			sectionList = new List<RecordInfoEntry>(sectionCount);
 			byte[] sig = content.Skip(0x3c).Take(8).ToArray();
 			if (Encoding.ASCII.GetString(sig) != signature) throw new FormatException("Invalid eReader file.");
 			for (int i = 0; i < sectionCount; i++)
@@ -32,15 +25,15 @@ namespace Drm.EReader
 				int  offset = content[si] << 24 | content[si + 1] << 16 | content[si + 2] << 8 | content[si + 3];
 				byte flags = content[si + 4];
 				var value = content[si + 5] << 16 | content[si + 6] << 8 | content[si + 7];
-				sectionList.Add(new HeaderEntry(offset, flags, value));
+				sectionList.Add(new RecordInfoEntry(offset, flags, value));
 			}
 		}
 
 		public byte[] GetSection(int sectionNumber)
 		{
-			int endOfSectionOffset = sectionNumber + 1 == sectionCount ? content.Length : sectionList[sectionNumber + 1].offset;
-			int startOfSectionOffset = sectionList[sectionNumber].offset;
-			return content.Skip(startOfSectionOffset).Take(endOfSectionOffset - startOfSectionOffset).ToArray();
+			long endOfSectionOffset = sectionNumber + 1 == sectionCount ? content.Length : sectionList[sectionNumber + 1].offset;
+			long startOfSectionOffset = sectionList[sectionNumber].offset;
+			return content.Skip((int)startOfSectionOffset).Take((int)(endOfSectionOffset - startOfSectionOffset)).ToArray();
 		}
 	}
 }
