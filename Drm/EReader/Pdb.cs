@@ -67,7 +67,7 @@ namespace Drm.EReader
 			}
 		}
 
-		public byte[] GetSectionData(int sectionNumber)
+		public byte[] GetSection(int sectionNumber)
 		{
 			long endOfSectionOffset = sectionNumber + 1 == numberOfRecords ? rawData.Length : records[sectionNumber + 1].offset;
 			long startOfSectionOffset = records[sectionNumber].offset;

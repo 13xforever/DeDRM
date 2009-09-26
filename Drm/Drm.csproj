@@ -58,7 +58,7 @@
     <Compile Include="Adept\Epub.cs" />
     <Compile Include="Adept\KeyRetriever.cs" />
     <Compile Include="EReader\EReaderAttributes.cs" />
-    <Compile Include="EReader\EReaderHeader.cs" />
+    <Compile Include="EReader\EReaderPdb.cs" />
     <Compile Include="EReader\EReaderProcessor.cs" />
     <Compile Include="EReader\PdbRecordInfo.cs" />
     <Compile Include="EReader\EReaderImageInfo.cs" />
