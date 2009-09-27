@@ -83,7 +83,7 @@ namespace Drm.EReader
 				haveMetadata = b == 1;
 				buf = new byte[3];
 				stream.Read(buf, 0, 3); //unknown, should be 0
-				buf = new byte[3];
+				buf = new byte[2];
 				stream.Read(buf, 0, 2);
 				if (BitConverter.IsLittleEndian) buf = buf.Reverse();
 				numberOfFootnotes = BitConverter.ToUInt16(buf, 0);
@@ -95,8 +95,8 @@ namespace Drm.EReader
 				chapterIndexFirstRecord = BitConverter.ToUInt16(buf, 0);
 				stream.Read(buf, 0, 2);
 				if (BitConverter.IsLittleEndian) buf = buf.Reverse();
-				magickValue = BitConverter.ToUInt16(buf, 0); 
-				if (magickValue != 2560) throw new FormatException(string.Format("Unknown Magick Value {0}", magickValue));
+				magickValue = BitConverter.ToUInt16(buf, 0);
+				//if (magickValue != 2560) throw new FormatException(string.Format("Unknown Magick Value {0}", magickValue));
 				stream.Read(buf, 0, 2);
 				if (BitConverter.IsLittleEndian) buf = buf.Reverse();
 				smallFontPageIndexeFirstRecord = BitConverter.ToUInt16(buf, 0);
