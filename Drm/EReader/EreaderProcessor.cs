@@ -28,6 +28,7 @@ namespace Drm.EReader
 			if (cookieShuf < 0x03 || cookieShuf > 0x14 || cookieSize < 0xf0 || cookieSize > 0x200) throw new InvalidOperationException("Unsupportd eReader format");
 			byte[] input = desEngine.TransformFinalBlock(data.Copy(-cookieSize), 0, cookieSize);
 			byte[] r = UnshuffData(input.SubRange(0, -8), cookieShuf);
+			//using (var stream = new FileStream(pdb.Filename+".eReaderSection1Dump", FileMode.Create, FileAccess.ReadWrite, FileShare.Read)) stream.Write(r, 0, r.Length);
 			byte[] userKeyPart1 = Encoding.ASCII.GetBytes(FixUserName(name));
 			byte[] userKeyPart2 = Encoding.ASCII.GetBytes(ccNumber.ToCharArray().Copy(-8));
 			long userKey;
@@ -51,7 +52,7 @@ namespace Drm.EReader
 			if (eReaderPdb.CompressionMethod == EReaderCompression.Drm1)
 			{
 				if (drmSubVersion != 13) throw new InvalidOperationException(string.Format("Unknown eReader DRM subversion ID: {0}", drmSubVersion));
-				encryptedKey = r.Copy(48, 8);
+				encryptedKey = r.Copy(44, 8);
 				encryptedKeySha = r.Copy(52, 20);
 			}
 			else if (eReaderPdb.CompressionMethod == EReaderCompression.Drm2)
@@ -61,12 +62,34 @@ namespace Drm.EReader
 			}
 			contentKey = desEngine.TransformFinalBlock(encryptedKey, 0, encryptedKey.Length);
 			byte[] checkHash = SHA1.Create().ComputeHash(contentKey);
-			if (!encryptedKeySha.IsEqualTo(checkHash)) throw new ArgumentException("Incorrect Name of Credit Card number.");
+			if (!encryptedKeySha.IsEqualTo(checkHash))
+			{
+				var s = new StringBuilder();
+				for (var x = 0; x < (r.Length - 8); x += 2)
+				{
+					for (var y = 0; y < (x - 20); y += 2) if (TestKeyDecryption(desEngine, r, x, y)) s.AppendFormat("keyOffset={0}, hashOffset={1}\n", x, y);
+					for (var y = x + 8; y < (r.Length - 20); y += 2) if (TestKeyDecryption(desEngine, r, x, y)) s.AppendFormat("keyOffset={0}, hashOffset={1}\n", x, y);
+				}
+				if (s.Length > 0) throw new InvalidDataException("Key and/or KeyHash offset mismatch. Possible values:\n\n" + s);
+				throw new ArgumentException("Incorrect Name of Credit Card number.");
+			}
 			contentDecryptor = GetDesEngine(contentKey);
 		}
 
+		private static bool TestKeyDecryption(ICryptoTransform desEngine, byte[] r, int keyOffset, int hashOffset)
+		{
+			var testKey = desEngine.TransformFinalBlock(r.Copy(keyOffset, 8), 0, 8);
+			var testHash = r.Copy(hashOffset, 20);
+			return SHA1.Create().ComputeHash(testKey).IsEqualTo(testHash);
+		}
+
+		public static void Strip(string ebookPath, string name, string ccNumber)
+		{
+			Strip(ebookPath, null, name, ccNumber);
+		}
 		public static void Strip(string ebookPath, string outputDir, string name, string ccNumber)
 		{
+			if (string.IsNullOrEmpty(outputDir)) outputDir = Path.GetDirectoryName(ebookPath);
 			var ebook = new Pdb(ebookPath);
 
 			var processor = new EReaderProcessor(ebook, name, ccNumber);

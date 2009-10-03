@@ -1,43 +1,15 @@
 using System;
 using System.IO;
-using System.Linq;
-using System.Text;
 using Drm.Utils;
 
 namespace Drm.EReader
 {
 	public class EReaderPdb
 	{
-		private Pdb pdbReader;
-		private bool haveDrm;
-		private EReaderCompression compressionMethod;
-		private int textEncoding;
-		private int numberOfSmallFontPages;
-		private int numberOfLargeFontPages;
-		private int nonTextFirstRecord;
-		private int numberOfChapters;
-		private int numberOfSmallFontIndexPages;
-		private int numberOfLargeFontIndexPages;
-		private int numberOfImages;
-		private int numberOfLinks;
-		private bool haveMetadata;
-		private int numberOfFootnotes;
-		private int numberOfSidebars;
-		private int chapterIndexFirstRecord;
-		private int magickValue;
-		private int smallFontPageIndexeFirstRecord;
-		private int largeFontPageIndexeFirstRecord;
-		private int imageDataFirstRecord;
-		private int linksFirstRecord;
-		private int metadataFirstRecord;
-		private int footnotesFirstRecord;
-		private int sidebarFirstRecord;
-		private int lastRecord;
-
 		public EReaderPdb(Pdb pdbReader)
 		{
 			this.pdbReader = pdbReader;
-			var headerRawData = pdbReader.GetSection(0);
+			byte[] headerRawData = pdbReader.GetSection(0);
 			if (headerRawData.Length != 132)
 				throw new FormatException("Unknown eReader header format.");
 
@@ -149,5 +121,30 @@ namespace Drm.EReader
 		public int FootnotesFirstRecord { get { return footnotesFirstRecord; } set { footnotesFirstRecord = value; } }
 		public int SidebarFirstRecord { get { return sidebarFirstRecord; } set { sidebarFirstRecord = value; } }
 		public int LastRecord { get { return lastRecord; } set { lastRecord = value; } }
+		private Pdb pdbReader;
+		private bool haveDrm;
+		private EReaderCompression compressionMethod;
+		private int textEncoding;
+		private int numberOfSmallFontPages;
+		private int numberOfLargeFontPages;
+		private int nonTextFirstRecord;
+		private int numberOfChapters;
+		private int numberOfSmallFontIndexPages;
+		private int numberOfLargeFontIndexPages;
+		private int numberOfImages;
+		private int numberOfLinks;
+		private bool haveMetadata;
+		private int numberOfFootnotes;
+		private int numberOfSidebars;
+		private int chapterIndexFirstRecord;
+		private int magickValue;
+		private int smallFontPageIndexeFirstRecord;
+		private int largeFontPageIndexeFirstRecord;
+		private int imageDataFirstRecord;
+		private int linksFirstRecord;
+		private int metadataFirstRecord;
+		private int footnotesFirstRecord;
+		private int sidebarFirstRecord;
+		private int lastRecord;
 	}
 }
