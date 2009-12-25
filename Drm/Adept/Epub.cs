@@ -97,6 +97,16 @@ namespace Drm.Adept
 							using (var outStream = new MemoryStream())
 							{
 								zipStream.CopyTo(outStream);
+								if (outStream.Length == 0)
+								{
+									Console.WriteLine("Warning! Decompression failed for '{0}'", file.FileName);
+									string outFileName = Path.Combine(Path.GetDirectoryName(outputPath), file.FileName) + ".gz";
+									string outFolder = Path.GetDirectoryName(outFileName);
+									if (!Directory.Exists(outFolder)) Directory.CreateDirectory(outFolder);
+									var outData = cipher.CreateDecryptor().TransformFinalBlock(data, 0, data.Length).ToArray();
+									using (var debugOut = new FileStream(outFileName, FileMode.Create, FileAccess.Write, FileShare.Read))
+										debugOut.Write(outData, 0, outData.Length);
+								}
 								data = outStream.ToArray();
 							}
 						}
