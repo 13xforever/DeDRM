@@ -9,9 +9,10 @@ namespace SimpleLauncher
 		private static void Main(string[] args)
 		{
 			IsOk = true;
-			foreach (var file in Directory.GetFiles(@"D:\Documents\My Books\Reader Library\", "The_Girl_*.epub", SearchOption.TopDirectoryOnly))
-				Epub.Strip(file, @"D:\Documents\My Books\Reader Library\out\" + Path.GetFileName(file));
-			//Epub.Strip(@"D:\Documents\My Books\Reader Library\New_Moon.epub", @"D:\Documents\My Books\Reader Library\New Moon.epub");
+			//IsOk &= Epub.Strip(@"D:\Documents\My Books\Reader Library\Poison_Sleep.epub", @"D:\Documents\Downloads\Books\Poison Sleep.epub");
+			foreach (var file in Directory.GetFiles(@"D:\Documents\Downloads\Books\", "*.epub", SearchOption.TopDirectoryOnly))
+				IsOk &= Epub.Strip(file, @"E:\Books\John Scalzi\Old Man’s War\" + Path.GetFileName(file));
+
 			//var eReaderPdb = new EReaderPdb(new Pdb(@"D:\Documents\Downloads\Books\Ysabel_45498.pdb"));
 
 			if (!IsOk) Console.ReadKey();

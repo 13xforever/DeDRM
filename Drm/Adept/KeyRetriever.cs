@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Management;
 using System.Security.Cryptography;
@@ -8,9 +10,15 @@ using Microsoft.Win32;
 
 namespace Drm.Adept
 {
+	internal class AuthData
+	{
+		public byte[] privateKey;
+		public string pkcs12Store;
+	}
+
 	public static class KeyRetriever
 	{
-		public static byte[] Retrieve()
+		public static List<byte[]> Retrieve()
 		{
 			ulong systemDriveSerial = GetSystemDriveSerialNumber();
 			CpuInfo cpuInfo = GetCpuInfo();
@@ -23,39 +31,45 @@ namespace Drm.Adept
 				deviceKeyData = (byte[])deviceKey.GetValue("key");
 			}
 			byte[] decryptedKey = ProtectedData.Unprotect(deviceKeyData, entropy, DataProtectionScope.CurrentUser);
-			byte[] privateLicense = GetPrivateLicense();
-			return DecryptData(decryptedKey, privateLicense);
+			var privateLicenses = GetPrivateLicenses();
+			return DecryptData(decryptedKey, privateLicenses);
 		}
 
-		private static byte[] DecryptData(byte[] key, byte[] data)
+		private static List<byte[]> DecryptData(byte[] key, List<byte[]> data)
 		{
-			byte[] result;
-			using (var cipher = new AesManaged {Mode = CipherMode.CBC, Key = key})
-				result = cipher.CreateDecryptor().TransformFinalBlock(data, 0, data.Length);
-			return result.Skip(26).ToArray();
+			var result = new List<byte[]>(data.Count);
+			foreach (var privateKey in data)
+			{
+				byte[] decryptedPrivateKey;
+				using (var cipher = new AesManaged {Mode = CipherMode.CBC, Key = key})
+					decryptedPrivateKey = cipher.CreateDecryptor().TransformFinalBlock(privateKey, 0, privateKey.Length);
+				result.Add(decryptedPrivateKey.Skip(26).ToArray());
+			}
+			return result;
 		}
 
-		private static byte[] GetPrivateLicense()
+		private static List<byte[]> GetPrivateLicenses()
 		{
+			var result = new List<byte[]>();
 			using (RegistryKey activationKey = Registry.CurrentUser.OpenSubKey(ActivationKey))
 			{
 				if (activationKey == null) throw new InvalidOperationException("ADE activation is corrupted or absent.");
 				foreach (var subKeyName in activationKey.GetSubKeyNames())
-				{
 					using (RegistryKey subKey = activationKey.OpenSubKey(subKeyName))
+					if (subKey.GetValue("").ToString() == "credentials")
 					{
+						var authData = new AuthData();
 						foreach (var keyName in subKey.GetSubKeyNames())
-						{
 							using (RegistryKey key = subKey.OpenSubKey(keyName))
-							{
-								if (key.GetValue("").ToString() == "privateLicenseKey")
-									return Convert.FromBase64String((string)key.GetValue("value"));
-							}
-						}
+							if (key.GetValue("").ToString() == "privateLicenseKey")
+								authData.privateKey = Convert.FromBase64String((string)key.GetValue("value"));
+							else if (key.GetValue("").ToString() == "pkcs12")
+								authData.pkcs12Store = (string)key.GetValue("value");
+						if (!string.IsNullOrEmpty(authData.pkcs12Store)) result.Add(authData.privateKey);
 					}
-				}
 			}
-			throw new InvalidOperationException("Couldn't find private license key!");
+			if (result.Count == 0) throw new InvalidOperationException("Couldn't find private license key!");
+			return result;
 		}
 
 		private static byte[] MakeEntropy(ulong serial, CpuInfo cpuInfo, string user)

@@ -18,15 +18,32 @@ namespace Drm.Adept
 {
 	public static class Epub
 	{
-		public static void Strip(string ebookPath, string output)
+		public static bool Strip(string ebookPath, string output)
 		{
-			Strip(KeyRetriever.Retrieve(), ebookPath, output);
+			return Strip(KeyRetriever.Retrieve(), ebookPath, output);
 		}
 
 		public static event Action<string> OnParseIssue;
 
-		public static void Strip(byte[] key, string ebookPath, string outputPath)
+		public static bool Strip(List<byte[]> keys, string ebookPath, string outputPath)
 		{
+			for (var i = 0; i < keys.Count; i++)
+			{
+				try
+				{
+					if (Strip(keys[i], ebookPath, outputPath)) return true;
+				}
+				catch(InvalidOperationException)
+				{
+					Console.WriteLine("Decryption failed for {0} with key #{1} out of {2}.", ebookPath, i + 1, keys.Count);
+				}
+			}
+			return false;
+		}
+
+		public static bool Strip(byte[] key, string ebookPath, string outputPath)
+		{
+			bool result = false;
 			RsaEngine rsa = GetRsaEngine(key);
 			using (var zip = new ZipFile(ebookPath, Encoding.UTF8))
 			{
@@ -75,13 +92,12 @@ namespace Drm.Adept
 				using (var output = new ZipFile(Encoding.UTF8))
 				{
 					output.UseZip64WhenSaving = Zip64Option.Never;
-					output.ForceNoCompression = true;
+					output.CompressionLevel = CompressionLevel.None;
 					using (var s = new MemoryStream())
 					{
 						zip["mimetype"].Extract(s);
-						output.AddEntry("mimetype", null, s.ToArray());
+						output.AddEntry("mimetype", s.ToArray());
 					}
-					output.ForceNoCompression = false;
 					output.CompressionLevel = CompressionLevel.BestCompression; //some files, like jpgs and mp3s will be stored anyway
 					foreach (var file in entriesToDecrypt)
 					{
@@ -104,11 +120,13 @@ namespace Drm.Adept
 								data = outStream.ToArray();
 							}
 						}
-						output.AddEntry(file.FileName, null, data);
+						output.AddEntry(file.FileName, data);
 					}
 					output.Save(outputPath);
+					result = true;
 				}
 			}
+			return result;
 		}
 
 		private static RsaEngine GetRsaEngine(byte[] key)

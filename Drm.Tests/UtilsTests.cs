@@ -1,7 +1,6 @@
 ﻿using Drm.EReader;
 using Drm.Utils;
 using NUnit.Framework;
-using NUnit.Framework.SyntaxHelpers;
 
 namespace Drm.Tests
 {
