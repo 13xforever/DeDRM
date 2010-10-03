@@ -9,13 +9,28 @@ namespace SimpleLauncher
 		private static void Main(string[] args)
 		{
 			IsOk = true;
-			//IsOk &= Epub.Strip(@"D:\Documents\My Books\Reader Library\Poison_Sleep.epub", @"D:\Documents\Downloads\Books\Poison Sleep.epub");
-			foreach (var file in Directory.GetFiles(@"D:\Documents\Downloads\Books\", "*.epub", SearchOption.TopDirectoryOnly))
-				IsOk &= Epub.Strip(file, @"E:\Books\John Scalzi\Old Man’s War\" + Path.GetFileName(file));
+			//IsOk &= Epub.Strip(@"D:\Documents\My Books\Reader Library\Eros,_Philia,_Agape.epub", @"D:\Documents\Downloads\Books\Eros,_Philia,_Agape.epub");
+			foreach (var file in Directory.EnumerateFiles(@"E:\Books\Orson Scott Card\tmp\", "*.epub", SearchOption.TopDirectoryOnly))
+			{
+				string bookName = Path.GetFileNameWithoutExtension(file);
+				Console.Write(bookName);
+				bool isBookProcessedOk = Epub.Strip(file, @"E:\Books\Orson Scott Card\" + Path.GetFileName(file));
+				PrintResult(bookName, isBookProcessedOk);
+				IsOk &= isBookProcessedOk;
+			}
 
 			//var eReaderPdb = new EReaderPdb(new Pdb(@"D:\Documents\Downloads\Books\Ysabel_45498.pdb"));
 
 			if (!IsOk) Console.ReadKey();
+		}
+
+		private static void PrintResult(string fileName, bool isBookProcessedOk)
+		{
+			string result = isBookProcessedOk ? "ok" : "failed";
+			Console.Write(new string(' ', Math.Max(40 - fileName.Length - result.Length, 1)));
+			Console.ForegroundColor = isBookProcessedOk ? ConsoleColor.Green : ConsoleColor.Red;
+			Console.WriteLine(result);
+			Console.ResetColor();
 		}
 
 		private static void Log(string message)

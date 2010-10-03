@@ -1,6 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual Studio 2008
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Drm", "Drm\Drm.csproj", "{9D016AB6-96E9-41BF-9677-C34FCE195B60}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimpleLauncher", "SimpleLauncher\SimpleLauncher.csproj", "{994DDFB3-C4E9-4DE4-AD08-A1D0B56702AD}"
