@@ -8,20 +8,35 @@ namespace SimpleLauncher
 	{
 		private static void Main(string[] args)
 		{
+			Console.WriteLine("Removing DRM...");
 			IsOk = true;
 			//IsOk &= Epub.Strip(@"D:\Documents\My Books\Reader Library\Eros,_Philia,_Agape.epub", @"D:\Documents\Downloads\Books\Eros,_Philia,_Agape.epub");
-			foreach (var file in Directory.EnumerateFiles(@"E:\Books\Orson Scott Card\tmp\", "*.epub", SearchOption.TopDirectoryOnly))
+			foreach (var file in Directory.EnumerateFiles(@"D:\Documents\Downloads\Books\", "*.epub", SearchOption.TopDirectoryOnly))
 			{
 				string bookName = Path.GetFileNameWithoutExtension(file);
 				Console.Write(bookName);
-				bool isBookProcessedOk = Epub.Strip(file, @"E:\Books\Orson Scott Card\" + Path.GetFileName(file));
+				bool isBookProcessedOk = false;
+				string error = null;
+				try
+				{
+					isBookProcessedOk = Epub.Strip(file, @"D:\Documents\Downloads\Books\1\" + Path.GetFileName(file));
+				}
+				catch(Exception e)
+				{
+					error = e.Message;
+					isBookProcessedOk = false;
+				}
 				PrintResult(bookName, isBookProcessedOk);
+				if (!isBookProcessedOk)
+					Console.WriteLine("\tError: " + error);
 				IsOk &= isBookProcessedOk;
 			}
 
 			//var eReaderPdb = new EReaderPdb(new Pdb(@"D:\Documents\Downloads\Books\Ysabel_45498.pdb"));
 
-			if (!IsOk) Console.ReadKey();
+			Console.WriteLine("Done.");
+			//if (!IsOk)
+				Console.ReadKey();
 		}
 
 		private static void PrintResult(string fileName, bool isBookProcessedOk)
