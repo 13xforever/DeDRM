@@ -18,27 +18,27 @@ namespace Drm.Adept
 {
 	public static class Epub
 	{
-		public static bool Strip(string ebookPath, string output)
+		public static ProcessResult Strip(string ebookPath, string output)
 		{
 			return Strip(KeyRetriever.Retrieve(), ebookPath, output);
 		}
 
 		public static event Action<string> OnParseIssue;
 
-		public static bool Strip(List<byte[]> keys, string ebookPath, string outputPath)
+		public static ProcessResult Strip(List<byte[]> keys, string ebookPath, string outputPath)
 		{
 			for (var i = 0; i < keys.Count; i++)
 			{
 				try
 				{
-					if (Strip(keys[i], ebookPath, outputPath)) return true;
+					if (Strip(keys[i], ebookPath, outputPath)) return ProcessResult.Success;
 				}
 				catch(InvalidOperationException)
 				{
 					Console.WriteLine("Decryption failed for {0} with key #{1} out of {2}.", ebookPath, i + 1, keys.Count);
 				}
 			}
-			return false;
+			return ProcessResult.Fail;
 		}
 
 		public static bool Strip(byte[] key, string ebookPath, string outputPath)

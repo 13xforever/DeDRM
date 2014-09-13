@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using Drm;
 using Drm.Adept;
 
 namespace SimpleLauncher
@@ -8,61 +10,57 @@ namespace SimpleLauncher
 	{
 		private static void Main(string[] args)
 		{
+			var inPath = args.Length > 0 ? args : new[] {@".\*.epub", @".\*.pdb"};
 			Console.WriteLine("Removing DRM...");
-			IsOk = true;
-			//IsOk &= Epub.Strip(@"D:\Documents\My Books\Reader Library\Eros,_Philia,_Agape.epub", @"D:\Documents\Downloads\Books\Eros,_Philia,_Agape.epub");
-			foreach (var file in Directory.EnumerateFiles(@"C:\Documents\Downloads\Books\1\", "*.epub", SearchOption.TopDirectoryOnly))
-			{
-				string bookName = Path.GetFileNameWithoutExtension(file);
-				Console.Write(bookName);
-				bool isBookProcessedOk = false;
-				string error = null;
-				try
+			var inFiles = GetInFiles(inPath);
+			foreach (var file in inFiles)
 				{
-					isBookProcessedOk = Epub.Strip(file, @"C:\Documents\Downloads\Books\" + Path.GetFileName(file));
+					string bookName = Path.GetFileNameWithoutExtension(file);
+					Console.Write(bookName);
+					ProcessResult isBookProcessedOk;
+					string error = null;
+					try
+					{
+						isBookProcessedOk = Epub.Strip(file, @"C:\Documents\Downloads\Books\" + Path.GetFileName(file));
+					}
+					catch(Exception e)
+					{
+						error = e.Message;
+						isBookProcessedOk = ProcessResult.Fail;
+					}
+					Logger.PrintResult(isBookProcessedOk);
+					if (isBookProcessedOk == ProcessResult.Fail)
+						Console.WriteLine("\tError: " + error);
 				}
-				catch(Exception e)
-				{
-					error = e.Message;
-					isBookProcessedOk = false;
-				}
-				PrintResult(bookName, isBookProcessedOk);
-				if (!isBookProcessedOk)
-					Console.WriteLine("\tError: " + error);
-				IsOk &= isBookProcessedOk;
-			}
 
 			//var eReaderPdb = new EReaderPdb(new Pdb(@"D:\Documents\Downloads\Books\Ysabel_45498.pdb"));
 
 			Console.WriteLine("Done.");
-			//if (!IsOk)
-				Console.ReadKey();
 		}
 
-		private static void PrintResult(string fileName, bool isBookProcessedOk)
+		private static IEnumerable<string> GetInFiles(string[] inPath)
 		{
-			string result = isBookProcessedOk ? "ok" : "failed";
-			Console.Write(new string(' ', Math.Max(40 - fileName.Length - result.Length, 1)));
-			Console.ForegroundColor = isBookProcessedOk ? ConsoleColor.Green : ConsoleColor.Red;
-			Console.WriteLine(result);
-			Console.ResetColor();
+			string dir, mask;
+			foreach (var path in inPath)
+			{
+				if (Directory.Exists(path))
+				{
+					dir = path;
+					mask = "*";
+				}
+				else
+				{
+					dir = Path.GetPathRoot(path);
+					mask = Path.GetFileName(path);
+				}
+				if (!Directory.Exists(dir))
+					continue;
+
+				foreach (var file in Directory.EnumerateFiles(dir, mask, SearchOption.TopDirectoryOnly))
+					yield return Path.Combine(dir, file);
+			}
 		}
 
-		private static void Log(string message)
-		{
-			Console.WriteLine(message);
-			IsOk = false;
-/*
-			Console.WriteLine("Warning! Decompression failed for '{0}'", file.FileName);
-			string outFileName = Path.Combine(Path.GetDirectoryName(outputPath), file.FileName) + ".gz";
-			string outFolder = Path.GetDirectoryName(outFileName);
-			if (!Directory.Exists(outFolder)) Directory.CreateDirectory(outFolder);
-			var outData = cipher.CreateDecryptor().TransformFinalBlock(data, 0, data.Length).ToArray();
-			using (var debugOut = new FileStream(outFileName, FileMode.Create, FileAccess.Write, FileShare.Read))
-				debugOut.Write(outData, 0, outData.Length);
-*/
-		}
 
-		private static bool IsOk;
 	}
 }
