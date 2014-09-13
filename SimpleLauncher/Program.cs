@@ -11,7 +11,7 @@ namespace SimpleLauncher
 			Console.WriteLine("Removing DRM...");
 			IsOk = true;
 			//IsOk &= Epub.Strip(@"D:\Documents\My Books\Reader Library\Eros,_Philia,_Agape.epub", @"D:\Documents\Downloads\Books\Eros,_Philia,_Agape.epub");
-			foreach (var file in Directory.EnumerateFiles(@"D:\Documents\Downloads\Books\", "*.epub", SearchOption.TopDirectoryOnly))
+			foreach (var file in Directory.EnumerateFiles(@"C:\Documents\Downloads\Books\1\", "*.epub", SearchOption.TopDirectoryOnly))
 			{
 				string bookName = Path.GetFileNameWithoutExtension(file);
 				Console.Write(bookName);
@@ -19,7 +19,7 @@ namespace SimpleLauncher
 				string error = null;
 				try
 				{
-					isBookProcessedOk = Epub.Strip(file, @"D:\Documents\Downloads\Books\1\" + Path.GetFileName(file));
+					isBookProcessedOk = Epub.Strip(file, @"C:\Documents\Downloads\Books\" + Path.GetFileName(file));
 				}
 				catch(Exception e)
 				{
