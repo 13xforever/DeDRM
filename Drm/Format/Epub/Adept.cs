@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Management;
 using System.Security.Cryptography;
@@ -8,7 +7,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Win32;
 
-namespace Drm.Adept
+namespace Drm.Format.Epub
 {
 	internal class AuthData
 	{
@@ -16,7 +15,7 @@ namespace Drm.Adept
 		public string pkcs12Store;
 	}
 
-	public static class KeyRetriever
+	public static class Adept
 	{
 		public static List<byte[]> Retrieve()
 		{

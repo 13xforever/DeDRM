@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using Drm.Utils;
 
-namespace Drm.EReader
+namespace Drm.Format.EReader
 {
 	public class Pdb
 	{

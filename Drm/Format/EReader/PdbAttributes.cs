@@ -1,6 +1,6 @@
 using System;
 
-namespace Drm.EReader
+namespace Drm.Format.EReader
 {
 	[Flags]
 	public enum PdbAttributes : ushort

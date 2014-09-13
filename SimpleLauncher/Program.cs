@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using Drm;
-using Drm.Adept;
+using Drm.Format;
 
 namespace SimpleLauncher
 {
@@ -14,27 +14,47 @@ namespace SimpleLauncher
 			Console.WriteLine("Removing DRM...");
 			var inFiles = GetInFiles(inPath);
 			foreach (var file in inFiles)
+			{
+				string bookName = Path.GetFileNameWithoutExtension(file);
+				Console.Write(bookName);
+
+				BookFormat format = FormatGuesser.Guess(file);
+				Logger.PrintResult(format);
+
+				var scheme = Drm.Scheme.SchemeGuesser.Guess(file, format);
+				Logger.PrintResult(scheme);
+
+				if (format == BookFormat.Unknown)
 				{
-					string bookName = Path.GetFileNameWithoutExtension(file);
-					Console.Write(bookName);
-					ProcessResult isBookProcessedOk;
-					string error = null;
-					try
-					{
-						isBookProcessedOk = Epub.Strip(file, @"C:\Documents\Downloads\Books\" + Path.GetFileName(file));
-					}
-					catch(Exception e)
-					{
-						error = e.Message;
-						isBookProcessedOk = ProcessResult.Fail;
-					}
-					Logger.PrintResult(isBookProcessedOk);
-					if (isBookProcessedOk == ProcessResult.Fail)
-						Console.WriteLine("\tError: " + error);
+					Logger.PrintResult(ProcessResult.Skipped);
+					continue;
 				}
 
-			//var eReaderPdb = new EReaderPdb(new Pdb(@"D:\Documents\Downloads\Books\Ysabel_45498.pdb"));
+				ProcessResult processResult;
+				string error = null;
+				try
+				{
+					var processor = DrmProcessor.Get(format, scheme);
+					var data = File.ReadAllBytes(file);
+					var result = processor.Strip(data);
 
+					var outDir = Path.Combine(Path.GetDirectoryName(file), "out");
+					if (!Directory.Exists(outDir))
+						Directory.CreateDirectory(outDir);
+
+					var outFile = Path.Combine(outDir, Path.GetFileName(file));
+					File.WriteAllBytes(outFile, result);
+					processResult = ProcessResult.Success;
+				}
+				catch(Exception e)
+				{
+					error = e.Message;
+					processResult = ProcessResult.Fail;
+				}
+				Logger.PrintResult(processResult);
+				if (processResult == ProcessResult.Fail)
+					Console.WriteLine("\tError: " + error);
+			}
 			Console.WriteLine("Done.");
 		}
 

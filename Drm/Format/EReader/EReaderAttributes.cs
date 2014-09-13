@@ -1,4 +1,4 @@
-namespace Drm.EReader
+namespace Drm.Format.EReader
 {
 	public enum EReaderCompression : byte
 	{

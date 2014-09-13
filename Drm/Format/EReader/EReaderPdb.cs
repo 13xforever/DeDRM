@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using Drm.Utils;
 
-namespace Drm.EReader
+namespace Drm.Format.EReader
 {
 	public class EReaderPdb
 	{

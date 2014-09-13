@@ -14,13 +14,13 @@ using Org.BouncyCastle.Crypto.Engines;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Math;
 
-namespace Drm.Adept
+namespace Drm.Format.Epub
 {
 	public static class Epub
 	{
 		public static ProcessResult Strip(string ebookPath, string output)
 		{
-			return Strip(KeyRetriever.Retrieve(), ebookPath, output);
+			return Strip(Adept.Retrieve(), ebookPath, output);
 		}
 
 		public static event Action<string> OnParseIssue;

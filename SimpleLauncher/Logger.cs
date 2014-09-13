@@ -5,15 +5,47 @@ namespace SimpleLauncher
 {
 	internal class Logger
 	{
-		internal static void PrintResult(string drmName)
+		internal static void PrintResult(BookFormat format)
 		{
-			PrintResult(drmName, 50, ConsoleColor.White);
+			string result = format.ToString();
+			ConsoleColor? color;
+			switch (format)
+			{
+				case BookFormat.EPub:
+				case BookFormat.EReader:
+					color = ConsoleColor.Green;
+					break;
+				default:
+					color = ConsoleColor.Red;
+					break;
+			}
+			PrintResult(result, 40, color);
+		}
+
+		internal static void PrintResult(PrivateKeyScheme drm)
+		{
+			string result = drm.ToString();
+			ConsoleColor? color;
+			switch (drm)
+			{
+				case PrivateKeyScheme.None:
+					color = null;
+					break;
+				case PrivateKeyScheme.Adept:
+				case PrivateKeyScheme.Kobo:
+					color = ConsoleColor.Green;
+					break;
+				default:
+					color = ConsoleColor.Red;
+					break;
+			}
+			PrintResult(result, 40, color);
 		}
 
 		internal static void PrintResult(ProcessResult status)
 		{
 			string result = status.ToString();
-			var color = Console.ForegroundColor;
+			ConsoleColor? color = null;
 			switch (status)
 			{
 				case ProcessResult.Skipped:
@@ -33,14 +65,19 @@ namespace SimpleLauncher
 			Console.ResetColor();
 		}
 
-		private static void PrintResult(string str, int position, ConsoleColor color)
+		private static void PrintResult(string str, int position, ConsoleColor? color)
 		{
 			if (Console.CursorLeft < position)
 				Console.CursorLeft = position;
-			var lastColor = Console.ForegroundColor;
-			Console.ForegroundColor = color;
-			Console.Write(str);
-			Console.ForegroundColor = lastColor;
+			if (color.HasValue)
+			{
+				var lastColor = Console.ForegroundColor;
+				Console.ForegroundColor = color.Value;
+				Console.Write(str);
+				Console.ForegroundColor = lastColor;
+			}
+			else
+				Console.Write(str);
 		}
 
 		internal static void Log(string message)
