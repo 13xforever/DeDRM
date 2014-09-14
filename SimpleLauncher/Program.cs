@@ -10,7 +10,7 @@ namespace SimpleLauncher
 	{
 		private static void Main(string[] args)
 		{
-			var inPath = args.Length > 0 ? args : new[] {@".\*.epub", @".\*.pdb"};
+			var inPath = args.Length > 0 ? args : new[] {@".\*"};
 			Console.WriteLine("Removing DRM...");
 			var inFiles = GetInFiles(inPath);
 			foreach (var file in inFiles)
