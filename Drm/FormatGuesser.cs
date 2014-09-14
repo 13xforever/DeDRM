@@ -24,7 +24,7 @@ namespace Drm
 						{
 							mime.Extract(stream);
 							var mimeStr = Encoding.UTF8.GetString(stream.ToArray());
-							if (mimeStr == "application/epub+zip")
+							if (mimeStr.StartsWith("application/epub+zip"))
 								return BookFormat.EPub;
 						}
 				}
