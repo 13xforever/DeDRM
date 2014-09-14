@@ -106,6 +106,7 @@
     <Compile Include="DrmProcessorFactory.cs" />
     <Compile Include="Utils\ArrayUtils.cs" />
     <Compile Include="Utils\EnumerableUtils.cs" />
+    <Compile Include="Utils\PhysicalAddressUtils.cs" />
     <Compile Include="Utils\StreamUtils.cs" />
   </ItemGroup>
   <ItemGroup>

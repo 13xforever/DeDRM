@@ -92,20 +92,20 @@ namespace Drm.Format.Epub
 
 		protected bool IsValidDecryptionKey(ZipFile zip, Dictionary<string, Tuple<Cipher, byte[]>> encryptedEntries)
 		{
-			return IsValidDecryptionKey(zip, encryptedEntries, JpgExt, new byte[] {0xff, 0xd8, 0xff}) ||
-					IsValidDecryptionKey(zip, encryptedEntries, PngExt, new byte[] {0x89, 0x50, 0x4e, 0x47}) ||
+			return IsValidDecryptionKey(zip, encryptedEntries, JpgExt, new byte[] {0xff, 0xd8, 0xff}) &&
+					IsValidDecryptionKey(zip, encryptedEntries, PngExt, new byte[] {0x89, 0x50, 0x4e, 0x47}) &&
 					IsValidDecryptionKey(zip, encryptedEntries, HtmExt, "<html");
 		}
 
 		private bool IsValidDecryptionKey(ZipFile zip, Dictionary<string, Tuple<Cipher, byte[]>> encryptedEntries, string[] extensions, byte[] signature)
 		{
 			var file = encryptedEntries.Keys.FirstOrDefault(e => extensions.Contains(Path.GetExtension(e).ToUpper()));
-			if (file == null) return false;
+			if (file == null) return true;
 
 			using (var stream = new MemoryStream())
 			{
 				zip[file].Extract(stream);
-				var content = stream.ToArray();
+				var content = Decryptor.Decrypt(stream.ToArray(), encryptedEntries[file].Item1, encryptedEntries[file].Item2);
 				return content.StartsWith(signature);
 			}
 		}
@@ -118,8 +118,9 @@ namespace Drm.Format.Epub
 			using (var stream = new MemoryStream())
 			{
 				zip[file].Extract(stream);
-				var content = Encoding.ASCII.GetString(stream.ToArray()).ToUpper();
-				return content.Contains(substr.ToUpper());
+				var content = Decryptor.Decrypt(stream.ToArray(), encryptedEntries[file].Item1, encryptedEntries[file].Item2);
+				var text = Encoding.ASCII.GetString(content).ToUpper();
+				return text.Contains(substr.ToUpper());
 			}
 		}
 

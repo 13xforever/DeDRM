@@ -15,9 +15,7 @@ namespace Drm.Format.Epub
 
 		public static List<byte[]> Retrieve(SQLiteConnection connection)
 		{
-			var result = new List<byte[]>();
 			var userIds = new List<string>();
-			var deviceIds = new List<string>();
 
 			using (var cmd = new SQLiteCommand("select UserID from user", connection))
 			using (var reader = cmd.ExecuteReader())
@@ -26,23 +24,27 @@ namespace Drm.Format.Epub
 
 			using (var sha256 = new SHA256Managed())
 			{
-				deviceIds.AddRange(NetworkInterface.GetAllNetworkInterfaces()
-					.Select(iface => iface.GetPhysicalAddress().ToString().ToUpper())
+				var macs = NetworkInterface.GetAllNetworkInterfaces()
+					.Select(iface => iface.GetPhysicalAddress().ToMacString())
 					.Distinct()
+					.ToList();
+				var deviceIds = macs
 					.Select(mac => DeviceIdPrefix + mac)
 					.Select(secret => Encoding.ASCII.GetBytes(secret))
-					.Select(bytes => sha256.TransformFinalBlock(bytes, 0, bytes.Length))
+					.Select(sha256.ComputeHash)
 					.Select(hash => hash.ToHexString())
-				);
+					.ToList();
 
-				result.AddRange(from deviceId in deviceIds
+				var result = (from deviceId in deviceIds
 					from userId in userIds
 					select Encoding.ASCII.GetBytes(deviceId + userId) into bytes
-					select sha256.TransformFinalBlock(bytes, 0, bytes.Length) into hash
+					select sha256.ComputeHash(bytes) into hash
 					select hash.Copy(hash.Length-16)
-				);
+				).ToList();
+
+				//var strResult = result.Select(b => b.ToHexString()).Distinct().ToList();
+				return result;
 			}
-			return result;
 		}
 	}
 }
