@@ -20,17 +20,26 @@ namespace Drm.Format.Epub
 		protected override Dictionary<string, Tuple<Cipher, byte[]>> GetSessionKeys(ZipFile zipFile, string originalFilePath)
 		{
 			var bookId = GetBookId(originalFilePath);
-			var result = new Dictionary<string, Tuple<Cipher, byte[]>>();
+			var tmp = new Dictionary<string, Tuple<Cipher, byte[]>>();
 			using (var cmd = new SQLiteCommand("select * from content_keys where volumeId='" + bookId + "'", connection))
 			using (var reader = cmd.ExecuteReader())
 				while (reader.Read())
 				{
 					var elementId = reader["elementId"];
 					var elementKey = Convert.FromBase64String(reader["elementKey"] as string);
-					result[elementId as string] = Tuple.Create(Cipher.Aes128Ecb, elementKey);
+					tmp[elementId as string] = Tuple.Create(Cipher.Aes128Ecb, elementKey);
 				}
 
-			return result;
+			foreach (var masterKey in MasterKeys)
+			{
+				var result = new Dictionary<string, Tuple<Cipher, byte[]>>();
+				foreach (var key in tmp.Keys)
+					result[key] = Tuple.Create(tmp[key].Item1, Decryptor.Decrypt(tmp[key].Item2, Cipher.Aes128Ecb, masterKey));
+				if (IsValidDecryptionKey(zipFile, result))
+					return result;
+			}
+
+			throw new InvalidOperationException("Couldn't find valid book decryption key.");
 		}
 
 		public override string GetFileName(string originalFilePath)

@@ -97,7 +97,7 @@ namespace Drm.Format.Epub
 					IsValidDecryptionKey(zip, encryptedEntries, HtmExt, "<html");
 		}
 
-		protected bool IsValidDecryptionKey(ZipFile zip, Dictionary<string, Tuple<Cipher, byte[]>> encryptedEntries, string[] extensions, byte[] signature)
+		private bool IsValidDecryptionKey(ZipFile zip, Dictionary<string, Tuple<Cipher, byte[]>> encryptedEntries, string[] extensions, byte[] signature)
 		{
 			var file = encryptedEntries.Keys.FirstOrDefault(e => extensions.Contains(Path.GetExtension(e).ToUpper()));
 			if (file == null) return false;
@@ -110,7 +110,7 @@ namespace Drm.Format.Epub
 			}
 		}
 
-		protected bool IsValidDecryptionKey(ZipFile zip, Dictionary<string, Tuple<Cipher, byte[]>> encryptedEntries, string[] extensions, string substr)
+		private bool IsValidDecryptionKey(ZipFile zip, Dictionary<string, Tuple<Cipher, byte[]>> encryptedEntries, string[] extensions, string substr)
 		{
 			var file = encryptedEntries.Keys.FirstOrDefault(e => extensions.Contains(Path.GetExtension(e).ToUpper()));
 			if (file == null) return false;
