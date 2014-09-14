@@ -34,7 +34,7 @@ namespace SimpleLauncher
 				string error = null;
 				try
 				{
-					var processor = DrmProcessor.Get(format, scheme);
+					var processor = DrmProcessorFactory.Get(format, scheme);
 					var data = File.ReadAllBytes(file);
 					var result = processor.Strip(data);
 
