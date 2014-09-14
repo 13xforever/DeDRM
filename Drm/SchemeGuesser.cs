@@ -1,6 +1,6 @@
 using System;
 
-namespace Drm.Scheme
+namespace Drm
 {
 	public static class SchemeGuesser
 	{

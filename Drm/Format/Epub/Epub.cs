@@ -13,15 +13,17 @@ namespace Drm.Format.Epub
 	{
 		public static event Action<string> OnParseIssue;
 
-		public byte[] Strip(byte[] bookData)
+		public byte[] Strip(byte[] bookData, string originalFilePath)
 		{
 			using (var bookStream = new MemoryStream(bookData))
 			using (var zip = ZipFile.Read(bookStream, new ReadOptions {Encoding = Encoding.UTF8}))
 			{
-				var sessionKeys = GetSessionKeys(zip);
+				var sessionKeys = GetSessionKeys(zip, originalFilePath);
 				return Strip(zip, sessionKeys);
 			}
 		}
+
+		public virtual string GetFileName(string originalFilePath) { return Path.GetFileName(originalFilePath); }
 
 		public byte[] Strip(ZipFile zip, Dictionary<string, Tuple<Cipher, byte[]>> sessionKeys)
 		{
@@ -69,7 +71,7 @@ namespace Drm.Format.Epub
 			}
 		}
 
-		protected abstract Dictionary<string, Tuple<Cipher, byte[]>> GetSessionKeys(ZipFile zipFile);
+		protected abstract Dictionary<string, Tuple<Cipher, byte[]>> GetSessionKeys(ZipFile zipFile, string originalFilePath);
 
 		private static readonly HashSet<string> META_NAMES = new HashSet<string> {"mimetype", "rights.xml", "META-INF/rights.xml", "META-INF/encryption.xml" };
 	}

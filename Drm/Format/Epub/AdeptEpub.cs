@@ -19,7 +19,7 @@ namespace Drm.Format.Epub
 
 		public AdeptEpub() { MasterKeys = Adept.Retrieve(); }
 
-		protected override Dictionary<string, Tuple<Cipher, byte[]>> GetSessionKeys(ZipFile zipFile)
+		protected override Dictionary<string, Tuple<Cipher, byte[]>> GetSessionKeys(ZipFile zipFile, string originalFilePath)
 		{
 			XPathNavigator navigator;
 			using (var s = new MemoryStream())

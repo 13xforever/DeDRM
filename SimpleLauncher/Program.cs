@@ -21,7 +21,7 @@ namespace SimpleLauncher
 				BookFormat format = FormatGuesser.Guess(file);
 				Logger.PrintResult(format);
 
-				var scheme = Drm.Scheme.SchemeGuesser.Guess(file, format);
+				var scheme = SchemeGuesser.Guess(file, format);
 				Logger.PrintResult(scheme);
 
 				if (format == BookFormat.Unknown)
@@ -36,7 +36,7 @@ namespace SimpleLauncher
 				{
 					var processor = DrmProcessorFactory.Get(format, scheme);
 					var data = File.ReadAllBytes(file);
-					var result = processor.Strip(data);
+					var result = processor.Strip(data, file);
 
 					var outDir = Path.Combine(Path.GetDirectoryName(file), "out");
 					if (!Directory.Exists(outDir))

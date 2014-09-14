@@ -1,19 +1,77 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
+using System.Data.SQLite;
+using System.IO;
 using Ionic.Zip;
 
 namespace Drm.Format.Epub
 {
-	public class KoboEpub : Epub
+	public class KoboEpub : Epub, IDisposable
 	{
 		public KoboEpub()
 		{
-			
+			var dataSource = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Kobo\Kobo Desktop Edition\Kobo.sqlite");
+			connection = new SQLiteConnection("Data Source=" + dataSource);
+			connection.Open();
 		}
 
-		protected override Dictionary<string, Tuple<Cipher, byte[]>> GetSessionKeys(ZipFile zipFile)
+		protected override Dictionary<string, Tuple<Cipher, byte[]>> GetSessionKeys(ZipFile zipFile, string originalFilePath)
 		{
-			
+			var bookId = GetBookId(originalFilePath);
+			var result = new Dictionary<string, Tuple<Cipher, byte[]>>();
+			using (var cmd = new SQLiteCommand("select * from content_keys where volumeId=" + bookId, connection))
+			using (var reader = cmd.ExecuteReader())
+				while (reader.Read())
+					result[reader["elementId"] as string] = Tuple.Create(Cipher.Aes128Cbc, Convert.FromBase64String(reader["elementKey"] as string));
+			return result;
+		}
+
+		public override string GetFileName(string originalFilePath)
+		{
+			var bookId = GetBookId(originalFilePath);
+			using (var cmd = new SQLiteCommand("select Title from content where ContentID=" + bookId, connection))
+			using (var reader = cmd.ExecuteReader())
+			{
+				if (!reader.Read())
+					throw new InvalidOperationException("Couldn't identify book record in local Kobo database.");
+				return reader[0] as string;
+			}
+		}
+
+		private Guid GetBookId(string originalFilePath)
+		{
+			var filename = Path.GetFileNameWithoutExtension(originalFilePath);
+			Guid bookId;
+			if (!Guid.TryParse(filename, out bookId))
+			{
+				var filesize = new FileInfo(originalFilePath).Length;
+				using (var cmd = new SQLiteCommand("select ContentID, Title from content where __FileSize=" + filesize, connection))
+				using (var reader = cmd.ExecuteReader())
+					if (reader.Read())
+						return Guid.Parse(reader[0] as string);
+			}
+			else
+			{
+				using (var cmd = new SQLiteCommand("select count(ContentID) from content where ContentID=" + bookId, connection))
+				{
+					var rows = cmd.ExecuteScalar(CommandBehavior.SingleResult) as int?;
+					if (rows == 1)
+						return bookId;
+				}
+			}
+			throw new InvalidOperationException("Couldn't identify book record in local Kobo database.");
+		}
+
+		private SQLiteConnection connection;
+
+		public void Dispose()
+		{
+			if (connection == null)
+				return;
+
+			connection.Close();
+			connection.Dispose();
 		}
 	}
 }
