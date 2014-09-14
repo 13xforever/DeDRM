@@ -70,7 +70,7 @@ namespace SimpleLauncher
 				}
 				else
 				{
-					dir = Path.GetPathRoot(path);
+					dir = Path.GetDirectoryName(path);
 					mask = Path.GetFileName(path);
 				}
 				if (!Directory.Exists(dir))
