@@ -1,4 +1,4 @@
-using System;
+using Drm.Format.Epub;
 
 namespace Drm
 {
@@ -6,7 +6,13 @@ namespace Drm
 	{
 		public static PrivateKeyScheme Guess(string filePath, BookFormat format)
 		{
-			throw new NotImplementedException();
+			switch (format)
+			{
+				case BookFormat.EPub:
+					return Epub.GuessScheme(filePath);
+				default:
+					return PrivateKeyScheme.Unknown;
+			}
 		}
 	}
 }

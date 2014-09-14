@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Xml.Linq;
 using Ionic.Zip;
 using Ionic.Zlib;
 
@@ -68,6 +69,35 @@ namespace Drm.Format.Epub
 					output.Save(result);
 					return result.ToArray();
 				}
+			}
+		}
+
+		internal static PrivateKeyScheme GuessScheme(string filePath)
+		{
+			try
+			{
+				using (var zip = new ZipFile(filePath))
+				{
+					var rights = zip.Entries.FirstOrDefault(e => e.FileName.EndsWith("rights.xml"));
+					if (rights == null)
+						return PrivateKeyScheme.None;
+
+					using (var stream = new MemoryStream())
+					{
+						rights.Extract(stream);
+						stream.Seek(0, SeekOrigin.Begin);
+						var xml = XDocument.Load(stream);
+						if (xml.Root.Name == "kdrm")
+							return PrivateKeyScheme.Kobo;
+						if (xml.Root.Name.Namespace == "http://ns.adobe.com/adept")
+							return PrivateKeyScheme.Adept;
+						return PrivateKeyScheme.Unknown;
+					}
+				}
+			}
+			catch
+			{
+				return PrivateKeyScheme.Unknown;
 			}
 		}
 
