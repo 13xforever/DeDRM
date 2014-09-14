@@ -70,8 +70,8 @@ namespace Drm.Format.Epub
 			{
 				using (var cmd = new SQLiteCommand("select count(ContentID) from content where ContentID='" + bookId + "'", connection))
 				{
-					var rows = cmd.ExecuteScalar(CommandBehavior.SingleResult) as int?;
-					if (rows == 1)
+					var rows = cmd.ExecuteScalar() as long?;
+					if (rows > 0)
 						return bookId;
 				}
 			}

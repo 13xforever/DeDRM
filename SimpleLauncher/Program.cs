@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using Drm;
 using Drm.Format;
+using Drm.Utils;
 
 namespace SimpleLauncher
 {
@@ -42,7 +43,8 @@ namespace SimpleLauncher
 					if (!Directory.Exists(outDir))
 						Directory.CreateDirectory(outDir);
 
-					var outFile = Path.Combine(outDir, processor.GetFileName(file));
+					var fileName = processor.GetFileName(file).ReplaceInvalidChars();
+					var outFile = Path.Combine(outDir, fileName);
 					File.WriteAllBytes(outFile, result);
 					processResult = ProcessResult.Success;
 				}
