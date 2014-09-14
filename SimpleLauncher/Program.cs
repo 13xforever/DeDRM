@@ -42,7 +42,7 @@ namespace SimpleLauncher
 					if (!Directory.Exists(outDir))
 						Directory.CreateDirectory(outDir);
 
-					var outFile = Path.Combine(outDir, Path.GetFileName(file));
+					var outFile = Path.Combine(outDir, processor.GetFileName(file));
 					File.WriteAllBytes(outFile, result);
 					processResult = ProcessResult.Success;
 				}

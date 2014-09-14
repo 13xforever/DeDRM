@@ -39,7 +39,7 @@ namespace SimpleLauncher
 					color = ConsoleColor.Red;
 					break;
 			}
-			PrintResult(result, 40, color);
+			PrintResult(result, 50, color);
 		}
 
 		internal static void PrintResult(ProcessResult status)
@@ -60,7 +60,7 @@ namespace SimpleLauncher
 					color = ConsoleColor.Yellow;
 					break;
 			}
-			PrintResult(result, Math.Max(60 - result.Length, 1), color);
+			PrintResult(result, 60, color);
 			Console.WriteLine();
 			Console.ResetColor();
 		}

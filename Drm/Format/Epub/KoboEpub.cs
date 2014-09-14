@@ -14,23 +14,29 @@ namespace Drm.Format.Epub
 			var dataSource = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Kobo\Kobo Desktop Edition\Kobo.sqlite");
 			connection = new SQLiteConnection("Data Source=" + dataSource);
 			connection.Open();
+			MasterKeys = KoboMasterKeys.Retrieve(connection);
 		}
 
 		protected override Dictionary<string, Tuple<Cipher, byte[]>> GetSessionKeys(ZipFile zipFile, string originalFilePath)
 		{
 			var bookId = GetBookId(originalFilePath);
 			var result = new Dictionary<string, Tuple<Cipher, byte[]>>();
-			using (var cmd = new SQLiteCommand("select * from content_keys where volumeId=" + bookId, connection))
+			using (var cmd = new SQLiteCommand("select * from content_keys where volumeId='" + bookId + "'", connection))
 			using (var reader = cmd.ExecuteReader())
 				while (reader.Read())
-					result[reader["elementId"] as string] = Tuple.Create(Cipher.Aes128Cbc, Convert.FromBase64String(reader["elementKey"] as string));
+				{
+					var elementId = reader["elementId"];
+					var elementKey = Convert.FromBase64String(reader["elementKey"] as string);
+					result[elementId as string] = Tuple.Create(Cipher.Aes128Ecb, elementKey);
+				}
+
 			return result;
 		}
 
 		public override string GetFileName(string originalFilePath)
 		{
 			var bookId = GetBookId(originalFilePath);
-			using (var cmd = new SQLiteCommand("select Title from content where ContentID=" + bookId, connection))
+			using (var cmd = new SQLiteCommand("select Title from content where ContentID='" + bookId + "'", connection))
 			using (var reader = cmd.ExecuteReader())
 			{
 				if (!reader.Read())
@@ -46,14 +52,14 @@ namespace Drm.Format.Epub
 			if (!Guid.TryParse(filename, out bookId))
 			{
 				var filesize = new FileInfo(originalFilePath).Length;
-				using (var cmd = new SQLiteCommand("select ContentID, Title from content where __FileSize=" + filesize, connection))
+				using (var cmd = new SQLiteCommand("select ContentID, Title from content where ___FileSize=" + filesize, connection))
 				using (var reader = cmd.ExecuteReader())
 					if (reader.Read())
 						return Guid.Parse(reader[0] as string);
 			}
 			else
 			{
-				using (var cmd = new SQLiteCommand("select count(ContentID) from content where ContentID=" + bookId, connection))
+				using (var cmd = new SQLiteCommand("select count(ContentID) from content where ContentID='" + bookId + "'", connection))
 				{
 					var rows = cmd.ExecuteScalar(CommandBehavior.SingleResult) as int?;
 					if (rows == 1)
@@ -64,6 +70,7 @@ namespace Drm.Format.Epub
 		}
 
 		private SQLiteConnection connection;
+		private readonly List<byte[]> MasterKeys;
 
 		public void Dispose()
 		{

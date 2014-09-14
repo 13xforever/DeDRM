@@ -85,10 +85,12 @@
   <ItemGroup>
     <Compile Include="Format\Epub\AdeptEpub.cs" />
     <Compile Include="Format\Epub\Cipher.cs" />
+    <Compile Include="Format\Epub\Decryptor.cs" />
     <Compile Include="Format\Epub\Epub.cs" />
     <Compile Include="FormatGuesser.cs" />
-    <Compile Include="Format\Epub\Adept.cs" />
+    <Compile Include="Format\Epub\AdeptMasterKeys.cs" />
     <Compile Include="Format\Epub\KoboEpub.cs" />
+    <Compile Include="Format\Epub\KoboMasterKeys.cs" />
     <Compile Include="Format\EReader\EReaderAttributes.cs" />
     <Compile Include="Format\EReader\EReaderPdb.cs" />
     <Compile Include="Format\EReader\EReaderProcessor.cs" />

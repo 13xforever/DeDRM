@@ -15,7 +15,7 @@ namespace Drm.Format.Epub
 		public string pkcs12Store;
 	}
 
-	public static class Adept
+	public static class AdeptMasterKeys
 	{
 		public static List<byte[]> Retrieve()
 		{

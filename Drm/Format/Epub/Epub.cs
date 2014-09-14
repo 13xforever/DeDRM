@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Text;
 using System.Xml.Linq;
+using Drm.Utils;
 using Ionic.Zip;
 using Ionic.Zlib;
 
@@ -49,18 +49,7 @@ namespace Drm.Format.Epub
 					}
 					if (sessionKeys.ContainsKey(file.FileName))
 					{
-						byte[] gzippedFile;
-						using (var cipher = new AesManaged {Mode = CipherMode.CBC, Key = sessionKeys[file.FileName].Item2})
-							gzippedFile = cipher.CreateDecryptor().TransformFinalBlock(data, 0, data.Length).Skip(16).ToArray();
-						using (var inStream = new MemoryStream(gzippedFile))
-						using (var zipStream = new DeflateStream(inStream, CompressionMode.Decompress))
-						using (var outStream = new MemoryStream())
-						{
-							zipStream.CopyTo(outStream);
-							if (outStream.Length == 0 && OnParseIssue != null)
-								OnParseIssue(string.Format("Warning! Decompression failed for '{0}'", file.FileName));
-							data = outStream.ToArray();
-						}
+						data = Decryptor.Decrypt(data, sessionKeys[file.FileName].Item1, sessionKeys[file.FileName].Item2);
 					}
 					output.AddEntry(file.FileName, data);
 				}
@@ -101,8 +90,44 @@ namespace Drm.Format.Epub
 			}
 		}
 
+		protected bool IsValidDecryptionKey(ZipFile zip, Dictionary<string, Tuple<Cipher, byte[]>> encryptedEntries)
+		{
+			return IsValidDecryptionKey(zip, encryptedEntries, JpgExt, new byte[] {0xff, 0xd8, 0xff}) ||
+					IsValidDecryptionKey(zip, encryptedEntries, PngExt, new byte[] {0x89, 0x50, 0x4e, 0x47}) ||
+					IsValidDecryptionKey(zip, encryptedEntries, HtmExt, "<html");
+		}
+
+		protected bool IsValidDecryptionKey(ZipFile zip, Dictionary<string, Tuple<Cipher, byte[]>> encryptedEntries, string[] extensions, byte[] signature)
+		{
+			var file = encryptedEntries.Keys.FirstOrDefault(e => extensions.Contains(Path.GetExtension(e).ToUpper()));
+			if (file == null) return false;
+
+			using (var stream = new MemoryStream())
+			{
+				zip[file].Extract(stream);
+				var content = stream.ToArray();
+				return content.StartsWith(signature);
+			}
+		}
+
+		protected bool IsValidDecryptionKey(ZipFile zip, Dictionary<string, Tuple<Cipher, byte[]>> encryptedEntries, string[] extensions, string substr)
+		{
+			var file = encryptedEntries.Keys.FirstOrDefault(e => extensions.Contains(Path.GetExtension(e).ToUpper()));
+			if (file == null) return false;
+
+			using (var stream = new MemoryStream())
+			{
+				zip[file].Extract(stream);
+				var content = Encoding.ASCII.GetString(stream.ToArray()).ToUpper();
+				return content.Contains(substr.ToUpper());
+			}
+		}
+
 		protected abstract Dictionary<string, Tuple<Cipher, byte[]>> GetSessionKeys(ZipFile zipFile, string originalFilePath);
 
 		private static readonly HashSet<string> META_NAMES = new HashSet<string> {"mimetype", "rights.xml", "META-INF/rights.xml", "META-INF/encryption.xml" };
+		private static readonly string[] JpgExt = {".JPG", ".JPEG"};
+		private static readonly string[] PngExt = {".PNG"};
+		private static readonly string[] HtmExt = {".HTML", ".HTM", ".XHTML"};
 	}
 }

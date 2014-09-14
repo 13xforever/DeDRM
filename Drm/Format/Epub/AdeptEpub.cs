@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Xml;
 using System.Xml.XPath;
+using Drm.Utils;
 using Ionic.Zip;
 using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Crypto.Engines;
@@ -17,7 +17,7 @@ namespace Drm.Format.Epub
 	{
 		private List<byte[]> MasterKeys;
 
-		public AdeptEpub() { MasterKeys = Adept.Retrieve(); }
+		public AdeptEpub() { MasterKeys = AdeptMasterKeys.Retrieve(); }
 
 		protected override Dictionary<string, Tuple<Cipher, byte[]>> GetSessionKeys(ZipFile zipFile, string originalFilePath)
 		{
@@ -37,19 +37,20 @@ namespace Drm.Format.Epub
 
 			string base64Key = node.Value;
 			byte[] contentKey = Convert.FromBase64String(base64Key);
-			byte[] bookkey = null;
+
+			var possibleKeys = new List<byte[]>();
+
 			foreach (var masterKey in MasterKeys)
 			{
 				var rsa = GetRsaEngine(masterKey);
-				rsa.ProcessBlock(contentKey, 0, contentKey.Length);
+				var bookkey = rsa.ProcessBlock(contentKey, 0, contentKey.Length);
 				//Padded as per RSAES-PKCS1-v1_5
-				if (bookkey[bookkey.Length - 17] != 0x00)
-					bookkey = null;
+				if (bookkey[bookkey.Length - 17] == 0x00)
+					possibleKeys.Add(bookkey.Copy(bookkey.Length - 16));
 			}
-			if (bookkey == null)
+			if (possibleKeys.Count == 0)
 				throw new InvalidOperationException("Problem decrypting session key");
 
-			bookkey = bookkey.Skip(bookkey.Length - 16).ToArray();
 			using (var s = new MemoryStream())
 			{
 				zipFile["META-INF/encryption.xml"].Extract(s);
@@ -66,9 +67,20 @@ namespace Drm.Format.Epub
 				if (cipher == Cipher.Unknown)
 					throw new InvalidOperationException("This ebook uses unsupported encryption method: " + em);
 
-				result[path] = Tuple.Create(cipher, bookkey);
+				result[path] = Tuple.Create(cipher, possibleKeys[0]);
 			}
-			return result;
+			if (IsValidDecryptionKey(zipFile, result))
+				return result;
+
+			var keys = result.Keys.ToList();
+			for (var i = 1; i < possibleKeys.Count; i++)
+			{
+				foreach (var key in keys)
+					result[key] = Tuple.Create(result[key].Item1, possibleKeys[i]);
+				if (IsValidDecryptionKey(zipFile, result))
+					return result;
+			}
+			throw new InvalidOperationException("Couldn't find a valid book decryption key.");
 		}
 
 		private static RsaEngine GetRsaEngine(byte[] key)
@@ -94,7 +106,7 @@ namespace Drm.Format.Epub
 		private Cipher GetCipher(string ns)
 		{
 			if (ns == "http://www.w3.org/2001/04/xmlenc#aes128-cbc")
-				return Cipher.Aes128Cbc;
+				return Cipher.Aes128CbcWithGzip;
 			else
 				return Cipher.Unknown;
 		}
