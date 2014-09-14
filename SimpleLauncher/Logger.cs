@@ -61,11 +61,15 @@ namespace SimpleLauncher
 					break;
 			}
 			PrintResult(result, 60, color);
-			Console.WriteLine();
-			Console.ResetColor();
 		}
 
-		private static void PrintResult(string str, int position, ConsoleColor? color)
+		internal static void PrintResult(string outFilename)
+		{
+			PrintResult(outFilename, 70);
+			Console.WriteLine();
+		}
+
+		private static void PrintResult(string str, int position, ConsoleColor? color = null)
 		{
 			if (Console.CursorLeft < position)
 				Console.CursorLeft = position;

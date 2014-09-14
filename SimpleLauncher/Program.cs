@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using Drm;
-using Drm.Format;
 using Drm.Utils;
 
 namespace SimpleLauncher
@@ -33,6 +32,7 @@ namespace SimpleLauncher
 
 				ProcessResult processResult;
 				string error = null;
+				string outFileName = bookName;
 				try
 				{
 					var processor = DrmProcessorFactory.Get(format, scheme);
@@ -43,9 +43,9 @@ namespace SimpleLauncher
 					if (!Directory.Exists(outDir))
 						Directory.CreateDirectory(outDir);
 
-					var fileName = processor.GetFileName(file).ReplaceInvalidChars();
-					var outFile = Path.Combine(outDir, fileName);
-					File.WriteAllBytes(outFile, result);
+					outFileName = processor.GetFileName(file).ReplaceInvalidChars();
+					var outFilePath = Path.Combine(outDir, outFileName);
+					File.WriteAllBytes(outFilePath, result);
 					processResult = ProcessResult.Success;
 				}
 				catch(Exception e)
@@ -54,6 +54,7 @@ namespace SimpleLauncher
 					processResult = ProcessResult.Fail;
 				}
 				Logger.PrintResult(processResult);
+				Logger.PrintResult(outFileName);
 				if (processResult == ProcessResult.Fail)
 					Console.WriteLine("\tError: " + error);
 			}
