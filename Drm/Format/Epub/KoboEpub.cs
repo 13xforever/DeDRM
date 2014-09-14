@@ -50,7 +50,7 @@ namespace Drm.Format.Epub
 			{
 				if (!reader.Read())
 					throw new InvalidOperationException("Couldn't identify book record in local Kobo database.");
-				return reader[0] as string;
+				return reader[0] as string + ".epub";
 			}
 		}
 
