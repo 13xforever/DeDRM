@@ -58,21 +58,23 @@ namespace Drm.Format.Epub
 		{
 			var filename = Path.GetFileNameWithoutExtension(originalFilePath);
 			Guid bookId;
-			if (!Guid.TryParse(filename, out bookId))
-			{
-				var filesize = new FileInfo(originalFilePath).Length;
-				using (var cmd = new SQLiteCommand("select ContentID, Title from content where ___FileSize=" + filesize, connection))
-				using (var reader = cmd.ExecuteReader())
-					if (reader.Read())
-						return Guid.Parse(reader[0] as string);
-			}
-			else
+			if (Guid.TryParse(filename, out bookId))
 			{
 				using (var cmd = new SQLiteCommand("select count(ContentID) from content where ContentID='" + bookId + "'", connection))
 				{
 					var rows = cmd.ExecuteScalar() as long?;
 					if (rows > 0)
 						return bookId;
+				}
+			}
+			else
+			{
+				var filesize = new FileInfo(originalFilePath).Length;
+				using (var cmd = new SQLiteCommand("select ContentID, Title from content where ___FileSize=" + filesize, connection))
+				using (var reader = cmd.ExecuteReader())
+				{
+					if (reader.Read())
+						return Guid.Parse(reader[0] as string);
 				}
 			}
 			throw new InvalidOperationException("Couldn't identify book record in local Kobo database.");
