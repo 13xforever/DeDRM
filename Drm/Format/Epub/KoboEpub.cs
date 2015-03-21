@@ -18,14 +18,16 @@ namespace Drm.Format.Epub
 
 		protected override bool IsEncrypted(ZipFile zipFile, string originalFilePath)
 		{
+			return true;
+
 			var bookId = GetBookId(originalFilePath);
-			using (var cmd = new SQLiteCommand("select IsEncrypted from content where ContentID='" + bookId + "'", connection))
+			using (var cmd = new SQLiteCommand("select * from content where ContentID='" + bookId + "'", connection))
 			using (var reader = cmd.ExecuteReader())
 			{
 				if (!reader.Read())
 					throw new InvalidOperationException("Couldn't identify book record in local Kobo database.");
-				//return reader.GetBoolean(0); //throws InvalidCastException. WTF?
-				return (bool)reader["IsEncrypted"];
+				return reader.GetBoolean(13); //throws InvalidCastException. WTF?
+				return (bool)reader["IsEncrypted"]; //this is broken and always returns false
 			}
 		}
 
