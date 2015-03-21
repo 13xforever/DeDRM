@@ -41,7 +41,7 @@ namespace Drm.Format.Epub
 			using (var cipher = new AesManaged {Mode = CipherMode.ECB, Key = key, Padding = PaddingMode.None})
 			{
 				var result = cipher.CreateDecryptor().TransformFinalBlock(data, 0, data.Length);
-				var txt = Encoding.UTF8.GetString(result);
+				//var txt = Encoding.UTF8.GetString(result);
 				return result;
 			}
 		}
