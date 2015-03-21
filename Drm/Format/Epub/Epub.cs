@@ -128,7 +128,11 @@ namespace Drm.Format.Epub
 		}
 
 		protected abstract Dictionary<string, Tuple<Cipher, byte[]>> GetSessionKeys(ZipFile zipFile, string originalFilePath);
-		protected abstract bool IsEncrypted(ZipFile zipFile, string originalFilePath);
+
+		protected virtual bool IsEncrypted(ZipFile zipFile, string originalFilePath)
+		{
+			return zipFile["META-INF/rights.xml"] != null;
+		}
 
 		private static readonly HashSet<string> META_NAMES = new HashSet<string> {"mimetype", "rights.xml", "META-INF/rights.xml", "META-INF/encryption.xml" };
 		private static readonly string[] JpgExt = {".JPG", ".JPEG"};
