@@ -131,7 +131,7 @@ namespace Drm.Format.Epub
 
 		protected virtual bool IsEncrypted(ZipFile zipFile, string originalFilePath)
 		{
-			return zipFile["META-INF/rights.xml"] != null;
+			return (zipFile["META-INF/rights.xml"] ?? zipFile["rights.xml"]) != null;
 		}
 
 		private static readonly HashSet<string> META_NAMES = new HashSet<string> {"mimetype", "rights.xml", "META-INF/rights.xml", "META-INF/encryption.xml" };
