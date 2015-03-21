@@ -24,7 +24,8 @@ namespace Drm.Format.Epub
 			{
 				if (!reader.Read())
 					throw new InvalidOperationException("Couldn't identify book record in local Kobo database.");
-				return reader.GetBoolean(0);
+				//return reader.GetBoolean(0); //throws InvalidCastException. WTF?
+				return (bool)reader["IsEncrypted"];
 			}
 		}
 
@@ -32,23 +33,22 @@ namespace Drm.Format.Epub
 		protected override Dictionary<string, Tuple<Cipher, byte[]>> GetSessionKeys(ZipFile zipFile, string originalFilePath)
 		{
 			var bookId = GetBookId(originalFilePath);
-			var tmp = new Dictionary<string, Tuple<Cipher, byte[]>>();
+			var encryptedSessionKeys = new Dictionary<string, byte[]>();
 			using (var cmd = new SQLiteCommand("select * from content_keys where volumeId='" + bookId + "'", connection))
 			using (var reader = cmd.ExecuteReader())
 				while (reader.Read())
 				{
 					var elementId = reader["elementId"];
 					var elementKey = Convert.FromBase64String(reader["elementKey"] as string);
-					tmp[elementId as string] = Tuple.Create(Cipher.Aes128Ecb, elementKey);
+					encryptedSessionKeys[elementId as string] = elementKey;
 				}
-
 			foreach (var masterKey in MasterKeys)
 			{
-				var result = new Dictionary<string, Tuple<Cipher, byte[]>>();
-				foreach (var key in tmp.Keys)
-					result[key] = Tuple.Create(tmp[key].Item1, Decryptor.Decrypt(tmp[key].Item2, Cipher.Aes128Ecb, masterKey));
-				if (IsValidDecryptionKey(zipFile, result))
-					return result;
+				var sessionKeys = new Dictionary<string, Tuple<Cipher, byte[]>>();
+				foreach (var key in encryptedSessionKeys.Keys)
+					sessionKeys[key] = Tuple.Create(Cipher.Aes128Ecb, Decryptor.Decrypt(encryptedSessionKeys[key], Cipher.Aes128Ecb, masterKey));
+				if (IsValidDecryptionKey(zipFile, sessionKeys))
+					return sessionKeys;
 			}
 
 			throw new InvalidOperationException("Couldn't find valid book decryption key.");
