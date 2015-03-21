@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Data.SQLite;
 using System.IO;
 using Ionic.Zip;
@@ -16,6 +15,19 @@ namespace Drm.Format.Epub
 			connection.Open();
 			MasterKeys = KoboMasterKeys.Retrieve(connection);
 		}
+
+		protected override bool IsEncrypted(ZipFile zipFile, string originalFilePath)
+		{
+			var bookId = GetBookId(originalFilePath);
+			using (var cmd = new SQLiteCommand("select IsEncrypted from content where ContentID='" + bookId + "'", connection))
+			using (var reader = cmd.ExecuteReader())
+			{
+				if (!reader.Read())
+					throw new InvalidOperationException("Couldn't identify book record in local Kobo database.");
+				return reader.GetBoolean(0);
+			}
+		}
+
 
 		protected override Dictionary<string, Tuple<Cipher, byte[]>> GetSessionKeys(ZipFile zipFile, string originalFilePath)
 		{

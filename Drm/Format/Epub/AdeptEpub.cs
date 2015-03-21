@@ -19,6 +19,11 @@ namespace Drm.Format.Epub
 
 		public AdeptEpub() { MasterKeys = AdeptMasterKeys.Retrieve(); }
 
+		protected override bool IsEncrypted(ZipFile zipFile, string originalFilePath)
+		{
+			return zipFile["META-INF/rights.xml"] != null;
+		}
+
 		protected override Dictionary<string, Tuple<Cipher, byte[]>> GetSessionKeys(ZipFile zipFile, string originalFilePath)
 		{
 			XPathNavigator navigator;

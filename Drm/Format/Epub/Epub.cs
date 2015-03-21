@@ -19,6 +19,9 @@ namespace Drm.Format.Epub
 			using (var bookStream = new MemoryStream(bookData))
 			using (var zip = ZipFile.Read(bookStream, new ReadOptions {Encoding = Encoding.UTF8}))
 			{
+				if (!IsEncrypted(zip, originalFilePath))
+					return bookData;
+
 				var sessionKeys = GetSessionKeys(zip, originalFilePath);
 				return Strip(zip, sessionKeys);
 			}
@@ -125,6 +128,7 @@ namespace Drm.Format.Epub
 		}
 
 		protected abstract Dictionary<string, Tuple<Cipher, byte[]>> GetSessionKeys(ZipFile zipFile, string originalFilePath);
+		protected abstract bool IsEncrypted(ZipFile zipFile, string originalFilePath);
 
 		private static readonly HashSet<string> META_NAMES = new HashSet<string> {"mimetype", "rights.xml", "META-INF/rights.xml", "META-INF/encryption.xml" };
 		private static readonly string[] JpgExt = {".JPG", ".JPEG"};
