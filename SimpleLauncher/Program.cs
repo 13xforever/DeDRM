@@ -16,7 +16,7 @@ namespace SimpleLauncher
 			foreach (var file in inFiles)
 			{
 				string bookName = Path.GetFileNameWithoutExtension(file);
-				Console.Write(bookName);
+				Console.Write(bookName.Substring(0, Math.Min(40, bookName.Length)));
 
 				BookFormat format = FormatGuesser.Guess(file);
 				Logger.PrintResult(format);
@@ -27,6 +27,7 @@ namespace SimpleLauncher
 				if (format == BookFormat.Unknown)
 				{
 					Logger.PrintResult(ProcessResult.Skipped);
+					Console.WriteLine();
 					continue;
 				}
 
