@@ -1,9 +1,7 @@
-using System;
 using System.Collections.Generic;
 using System.Data.SQLite;
 using System.Linq;
 using System.Net.NetworkInformation;
-using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
 using Drm.Utils;
@@ -12,7 +10,7 @@ namespace Drm.Format.Epub
 {
 	public static class KoboMasterKeys
 	{
-		private const string Salt = "NoCanLook";
+		private static readonly string[] Salts = { "NoCanLook", "XzUhGYdFp" };
 
 		public static List<byte[]> Retrieve(SQLiteConnection connection)
 		{
@@ -37,12 +35,14 @@ namespace Drm.Format.Epub
 						.Distinct()
 						.Where(addr => !string.IsNullOrEmpty(addr))
 						.ToList();
-					deviceIds = macs
-						.Select(mac => Salt + mac)
-						.Select(secret => Encoding.UTF8.GetBytes(secret.Trim()))
-						.Select(sha256.ComputeHash)
-						.Select(hash => hash.ToHexString())
-						.ToList();
+					deviceIds = (
+						from mac in macs
+						from salt in Salts
+						let secret = salt + mac
+						let trimmedSecret = Encoding.UTF8.GetBytes(secret.Trim())
+						let hash = sha256.ComputeHash(trimmedSecret)
+						select hash.ToHexString()
+					).ToList();
 				}
 				var result = (from deviceId in deviceIds
 					from userId in userIds

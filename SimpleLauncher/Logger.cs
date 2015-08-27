@@ -29,6 +29,7 @@ namespace SimpleLauncher
 			switch (drm)
 			{
 				case PrivateKeyScheme.None:
+				case PrivateKeyScheme.KoboNone:
 					color = null;
 					break;
 				case PrivateKeyScheme.Adept:

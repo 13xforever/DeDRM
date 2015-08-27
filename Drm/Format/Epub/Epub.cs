@@ -72,7 +72,12 @@ namespace Drm.Format.Epub
 				{
 					var rights = zip.Entries.FirstOrDefault(e => e.FileName.EndsWith("rights.xml"));
 					if (rights == null)
+					{
+						Guid guid;
+						if (Guid.TryParse(Path.GetFileNameWithoutExtension(filePath), out guid))
+							return PrivateKeyScheme.KoboNone;
 						return PrivateKeyScheme.None;
+					}
 
 					using (var stream = new MemoryStream())
 					{
@@ -95,15 +100,15 @@ namespace Drm.Format.Epub
 
 		protected bool IsValidDecryptionKey(ZipFile zip, Dictionary<string, Tuple<Cipher, byte[]>> encryptedEntries)
 		{
-			return IsValidDecryptionKey(zip, encryptedEntries, JpgExt, new byte[] {0xff, 0xd8, 0xff}) &&
-					IsValidDecryptionKey(zip, encryptedEntries, PngExt, new byte[] {0x89, 0x50, 0x4e, 0x47}) &&
+			return IsValidDecryptionKey(zip, encryptedEntries, JpgExt, new byte[] {0xff, 0xd8, 0xff}) ||
+					IsValidDecryptionKey(zip, encryptedEntries, PngExt, new byte[] {0x89, 0x50, 0x4e, 0x47}) ||
 					IsValidDecryptionKey(zip, encryptedEntries, HtmExt, "<html");
 		}
 
 		private bool IsValidDecryptionKey(ZipFile zip, Dictionary<string, Tuple<Cipher, byte[]>> encryptedEntries, string[] extensions, byte[] signature)
 		{
 			var file = encryptedEntries.Keys.FirstOrDefault(e => extensions.Contains(Path.GetExtension(e).ToUpper()));
-			if (file == null) return true;
+			if (file == null) return false;
 
 			using (var stream = new MemoryStream())
 			{

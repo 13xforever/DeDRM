@@ -20,5 +20,6 @@ namespace Drm
 		None,
 		Adept,
 		Kobo,
+		KoboNone,
 	}
 }

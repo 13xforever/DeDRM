@@ -18,6 +18,7 @@ namespace Drm
 						case PrivateKeyScheme.Adept:
 							return AdeptEPub.Value;
 						case PrivateKeyScheme.Kobo:
+						case PrivateKeyScheme.KoboNone:
 							return KoboEPub.Value;
 						default:
 							throw new NotSupportedException("Unsupported combination of book format and DRM scheme.");
