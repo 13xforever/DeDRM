@@ -41,7 +41,6 @@ namespace Drm.Format.Epub
 					zip["mimetype"].Extract(s);
 					output.AddEntry("mimetype", s.ToArray());
 				}
-				output.CompressionLevel = CompressionLevel.BestCompression; //some files, like jpgs and mp3s will be stored anyway
 				foreach (var file in entriesToDecrypt)
 				{
 					byte[] data;
@@ -51,9 +50,9 @@ namespace Drm.Format.Epub
 						data = s.ToArray();
 					}
 					if (sessionKeys.ContainsKey(file.FileName))
-					{
 						data = Decryptor.Decrypt(data, sessionKeys[file.FileName].Item1, sessionKeys[file.FileName].Item2);
-					}
+					var ext = Path.GetExtension(file.FileName);
+					output.CompressionLevel = UncompressibleExts.Contains(ext) ? CompressionLevel.None : CompressionLevel.BestCompression;
 					output.AddEntry(file.FileName, data);
 				}
 				using (var result = new MemoryStream())
@@ -143,5 +142,11 @@ namespace Drm.Format.Epub
 		private static readonly string[] JpgExt = {".JPG", ".JPEG"};
 		private static readonly string[] PngExt = {".PNG"};
 		private static readonly string[] HtmExt = {".HTML", ".HTM", ".XHTML"};
+		private static readonly HashSet<string> UncompressibleExts = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase)
+		{
+			".jpg",
+			".jpeg",
+			".png",
+		};
 	}
 }

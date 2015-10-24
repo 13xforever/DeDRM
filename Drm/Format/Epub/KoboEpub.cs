@@ -43,12 +43,16 @@ namespace Drm.Format.Epub
 		public override string GetFileName(string originalFilePath)
 		{
 			var bookId = GetBookId(originalFilePath);
-			using (var cmd = new SQLiteCommand("select Title from content where ContentID='" + bookId + "'", connection))
+			using (var cmd = new SQLiteCommand("select Title, Subtitle from content where ContentID='" + bookId + "'", connection))
 			using (var reader = cmd.ExecuteReader())
 			{
 				if (!reader.Read())
 					throw new InvalidOperationException("Couldn't identify book record in local Kobo database.");
-				return reader[0] as string + ".epub";
+				var title = reader[0] as string;
+				var subtitle = reader[1] as string;
+				if (!string.IsNullOrEmpty(subtitle))
+					title = $"{title} - {subtitle}";
+				return title + ".epub";
 			}
 		}
 

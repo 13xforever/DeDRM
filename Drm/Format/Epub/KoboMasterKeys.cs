@@ -10,7 +10,7 @@ namespace Drm.Format.Epub
 {
 	public static class KoboMasterKeys
 	{
-		private static readonly string[] Salts = { "NoCanLook", "XzUhGYdFp" };
+		private static readonly string[] Salts = { "XzUhGYdFp", "NoCanLook" };
 
 		public static List<byte[]> Retrieve(SQLiteConnection connection)
 		{
