@@ -14,23 +14,24 @@ namespace Drm.Format.Epub
 
 		public static List<byte[]> Retrieve(SQLiteConnection connection)
 		{
-			var userIds = new List<string>();
-			using (var cmd = new SQLiteCommand("select UserID from user", connection))
-			using (var reader = cmd.ExecuteReader())
-				while (reader.Read())
-					userIds.Add(reader["UserID"] as string);
 			using (var sha256 = new SHA256Managed())
 			{
-				var combinedSalt = Salts[1] + Salts[2];
-				var combinedHash = sha256.ComputeHash(Encoding.ASCII.GetBytes(combinedSalt)).ToHexString();
-				var realSalt = combinedHash.Substring(11, 9);
+				var combinedSalt = Salts[1] + Salts[2]; //XzUhGYdFpNoCanLook
+				var combinedHash = sha256.ComputeHash(Encoding.ASCII.GetBytes(combinedSalt)).ToHexString(); //8bd007187bc88b3a2e1371b6f5f4fa0719f8b45104841b382b18e671f8ba2057
+				var realSalt = combinedHash.Substring(11, 9); //88b3a2e13
 				var mac = NetworkInterface.GetAllNetworkInterfaces()
 					.Where(iface => iface.NetworkInterfaceType != NetworkInterfaceType.Loopback)
 					.Select(iface => iface.GetPhysicalAddress().ToMacString())
 					.Distinct()
 					.First(addr => !string.IsNullOrEmpty(addr));
-				var secret = realSalt + mac;
+				var secret = realSalt + mac; //88b3a2e13FF:FF:FF:FF:FF:FF
 				var deviceId = sha256.ComputeHash(Encoding.ASCII.GetBytes(secret)).ToHexString();
+
+				var userIds = new List<string>();
+				using (var cmd = new SQLiteCommand("select UserID from user", connection))
+				using (var reader = cmd.ExecuteReader())
+					while (reader.Read())
+						userIds.Add(reader["UserID"] as string);
 
 				var result = (
 					from userId in userIds
