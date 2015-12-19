@@ -1,4 +1,4 @@
-﻿using Drm.EReader;
+﻿using Drm.Format.EReader;
 using Drm.Utils;
 using NUnit.Framework;
 

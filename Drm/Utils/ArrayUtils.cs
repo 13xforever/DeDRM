@@ -1,4 +1,6 @@
 using System;
+using System.Linq;
+using System.Text;
 
 namespace Drm.Utils
 {
@@ -54,6 +56,26 @@ namespace Drm.Utils
 			var result = new T[source.LongLength];
 			for (int i = 0; i < source.LongLength; i++) result[i] = source[source.LongLength - i - 1];
 			return result;
+		}
+
+		public static string ToHexString(this byte[] source)
+		{
+			if (source == null) return null;
+			if (source.Length == 0) return "";
+
+			var result = new StringBuilder(source.Length);
+			foreach (var b in source)
+				result.Append(b.ToString("x2"));
+			return result.ToString();
+		}
+
+		public static bool StartsWith(this byte[] source, byte[] pattern)
+		{
+			if (source == null || pattern == null) return false;
+			if (pattern.Length == 0) return false;
+			if (source.Length < pattern.Length) return false;
+
+			return source.Copy(0, pattern.Length).SequenceEqual(pattern);
 		}
 	}
 }

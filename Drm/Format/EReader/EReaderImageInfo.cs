@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace Drm.EReader
+namespace Drm.Format.EReader
 {
 	internal class EReaderImageInfo
 	{

@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
-using Drm.Adept;
+using Drm;
+using Drm.Utils;
 
 namespace SimpleLauncher
 {
@@ -8,61 +10,81 @@ namespace SimpleLauncher
 	{
 		private static void Main(string[] args)
 		{
+			var inPath = args.Length > 0 ? args : new[] {@".\*"};
 			Console.WriteLine("Removing DRM...");
-			IsOk = true;
-			//IsOk &= Epub.Strip(@"D:\Documents\My Books\Reader Library\Eros,_Philia,_Agape.epub", @"D:\Documents\Downloads\Books\Eros,_Philia,_Agape.epub");
-			foreach (var file in Directory.EnumerateFiles(@"D:\Documents\Downloads\Books\", "*.epub", SearchOption.TopDirectoryOnly))
+			var inFiles = GetInFiles(inPath);
+			foreach (var file in inFiles)
 			{
 				string bookName = Path.GetFileNameWithoutExtension(file);
-				Console.Write(bookName);
-				bool isBookProcessedOk = false;
+				Console.Write(bookName.Substring(0, Math.Min(40, bookName.Length)));
+
+				BookFormat format = FormatGuesser.Guess(file);
+				Logger.PrintResult(format);
+
+				var scheme = SchemeGuesser.Guess(file, format);
+				Logger.PrintResult(scheme);
+
+				if (format == BookFormat.Unknown)
+				{
+					Logger.PrintResult(ProcessResult.Skipped);
+					Console.WriteLine();
+					continue;
+				}
+
+				ProcessResult processResult;
 				string error = null;
+				string outFileName = bookName;
 				try
 				{
-					isBookProcessedOk = Epub.Strip(file, @"D:\Documents\Downloads\Books\1\" + Path.GetFileName(file));
+					var processor = DrmProcessorFactory.Get(format, scheme);
+					var data = File.ReadAllBytes(file);
+					var result = processor.Strip(data, file);
+
+					var outDir = Path.Combine(Path.GetDirectoryName(file), "out");
+					if (!Directory.Exists(outDir))
+						Directory.CreateDirectory(outDir);
+
+					outFileName = processor.GetFileName(file).ReplaceInvalidChars();
+					var outFilePath = Path.Combine(outDir, outFileName);
+					File.WriteAllBytes(outFilePath, result);
+					processResult = ProcessResult.Success;
 				}
 				catch(Exception e)
 				{
 					error = e.Message;
-					isBookProcessedOk = false;
+					processResult = ProcessResult.Fail;
 				}
-				PrintResult(bookName, isBookProcessedOk);
-				if (!isBookProcessedOk)
+				Logger.PrintResult(processResult);
+				Logger.PrintResult(outFileName);
+				if (processResult == ProcessResult.Fail)
 					Console.WriteLine("\tError: " + error);
-				IsOk &= isBookProcessedOk;
 			}
-
-			//var eReaderPdb = new EReaderPdb(new Pdb(@"D:\Documents\Downloads\Books\Ysabel_45498.pdb"));
-
 			Console.WriteLine("Done.");
-			//if (!IsOk)
-				Console.ReadKey();
 		}
 
-		private static void PrintResult(string fileName, bool isBookProcessedOk)
+		private static IEnumerable<string> GetInFiles(string[] inPath)
 		{
-			string result = isBookProcessedOk ? "ok" : "failed";
-			Console.Write(new string(' ', Math.Max(40 - fileName.Length - result.Length, 1)));
-			Console.ForegroundColor = isBookProcessedOk ? ConsoleColor.Green : ConsoleColor.Red;
-			Console.WriteLine(result);
-			Console.ResetColor();
+			string dir, mask;
+			foreach (var path in inPath)
+			{
+				if (Directory.Exists(path))
+				{
+					dir = path;
+					mask = "*";
+				}
+				else
+				{
+					dir = Path.GetDirectoryName(path);
+					mask = Path.GetFileName(path);
+				}
+				if (!Directory.Exists(dir))
+					continue;
+
+				foreach (var file in Directory.EnumerateFiles(dir, mask, SearchOption.TopDirectoryOnly))
+					yield return Path.Combine(dir, file);
+			}
 		}
 
-		private static void Log(string message)
-		{
-			Console.WriteLine(message);
-			IsOk = false;
-/*
-			Console.WriteLine("Warning! Decompression failed for '{0}'", file.FileName);
-			string outFileName = Path.Combine(Path.GetDirectoryName(outputPath), file.FileName) + ".gz";
-			string outFolder = Path.GetDirectoryName(outFileName);
-			if (!Directory.Exists(outFolder)) Directory.CreateDirectory(outFolder);
-			var outData = cipher.CreateDecryptor().TransformFinalBlock(data, 0, data.Length).ToArray();
-			using (var debugOut = new FileStream(outFileName, FileMode.Create, FileAccess.Write, FileShare.Read))
-				debugOut.Write(outData, 0, outData.Length);
-*/
-		}
 
-		private static bool IsOk;
 	}
 }

@@ -1,7 +1,7 @@
 using System;
 using System.Linq;
 
-namespace Drm.EReader
+namespace Drm.Format.EReader
 {
 	public class PdbRecordInfo
 	{

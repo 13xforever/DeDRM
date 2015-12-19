@@ -4,9 +4,10 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using Drm.Utils;
+using Ionic.Crc;
 using Ionic.Zlib;
 
-namespace Drm.EReader
+namespace Drm.Format.EReader
 {
 	public class EReaderProcessor
 	{
