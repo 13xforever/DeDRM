@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
-using System.Text;
 using Ionic.Zlib;
 
 namespace Drm.Format.Epub
@@ -36,9 +35,9 @@ namespace Drm.Format.Epub
 			}
 		}
 
-		private static byte[] DecryptAes128Ecb(byte[] data, byte[] key)
+		internal static byte[] DecryptAes128Ecb(byte[] data, byte[] key, PaddingMode paddingMode = PaddingMode.PKCS7)
 		{
-			using (var cipher = new AesManaged {Mode = CipherMode.ECB, Key = key, Padding = PaddingMode.None})
+			using (var cipher = new AesManaged {Mode = CipherMode.ECB, Key = key, Padding = paddingMode})
 				return cipher.CreateDecryptor().TransformFinalBlock(data, 0, data.Length);
 		}
 	}

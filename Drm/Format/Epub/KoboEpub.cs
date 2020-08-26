@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Data.SQLite;
 using System.IO;
+using System.Security.Cryptography;
 using Ionic.Zip;
 
 namespace Drm.Format.Epub
@@ -32,7 +33,7 @@ namespace Drm.Format.Epub
 			{
 				var sessionKeys = new Dictionary<string, (Cipher cipher, byte[] data)>();
 				foreach (var key in encryptedSessionKeys.Keys)
-					sessionKeys[key] = (Cipher.Aes128Ecb, Decryptor.Decrypt(encryptedSessionKeys[key], Cipher.Aes128Ecb, masterKey));
+					sessionKeys[key] = (Cipher.Aes128Ecb, Decryptor.DecryptAes128Ecb(encryptedSessionKeys[key], masterKey, PaddingMode.None));
 				if (IsValidDecryptionKey(zipFile, sessionKeys))
 					return sessionKeys;
 			}
