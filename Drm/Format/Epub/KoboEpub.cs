@@ -50,8 +50,8 @@ namespace Drm.Format.Epub
 				if (!reader.Read())
 					throw new InvalidOperationException("Couldn't identify book record in local Kobo database.");
 
-				var title = (string)reader[0];
-				var subtitle = (string)reader[1];
+				var title = reader[0] as string;
+				var subtitle = reader[1] as string;
 				if (!string.IsNullOrEmpty(subtitle))
 					title = $"{title} - {subtitle}";
 				return title + ".epub";
