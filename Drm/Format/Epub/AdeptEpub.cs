@@ -9,17 +9,14 @@ using Ionic.Zip;
 using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Crypto.Engines;
 using Org.BouncyCastle.Crypto.Parameters;
-using Org.BouncyCastle.Math;
 
 namespace Drm.Format.Epub
 {
 	public class AdeptEpub : Epub
 	{
-		private List<byte[]> MasterKeys;
+		private readonly List<byte[]> MasterKeys = AdeptMasterKeys.Retrieve();
 
-		public AdeptEpub() { MasterKeys = AdeptMasterKeys.Retrieve(); }
-
-		protected override Dictionary<string, Tuple<Cipher, byte[]>> GetSessionKeys(ZipFile zipFile, string originalFilePath)
+		protected override Dictionary<string, (Cipher cipher, byte[] data)> GetSessionKeys(ZipFile zipFile, string originalFilePath)
 		{
 			XPathNavigator navigator;
 			using (var s = new MemoryStream())
@@ -31,12 +28,12 @@ namespace Drm.Format.Epub
 			var nsm = new XmlNamespaceManager(navigator.NameTable);
 			nsm.AddNamespace("a", "http://ns.adobe.com/adept");
 			nsm.AddNamespace("e", "http://www.w3.org/2001/04/xmlenc#");
-			XPathNavigator node = navigator.SelectSingleNode("//a:encryptedKey[1]", nsm);
+			var node = navigator.SelectSingleNode("//a:encryptedKey[1]", nsm);
 			if (node == null)
 				throw new InvalidOperationException("Can't find session key.");
 
-			string base64Key = node.Value;
-			byte[] contentKey = Convert.FromBase64String(base64Key);
+			var base64Key = node.Value;
+			var contentKey = Convert.FromBase64String(base64Key);
 
 			var possibleKeys = new List<byte[]>();
 
@@ -57,17 +54,17 @@ namespace Drm.Format.Epub
 				s.Seek(0, SeekOrigin.Begin);
 				navigator = new XPathDocument(s).CreateNavigator();
 			}
-			XPathNodeIterator contentLinks = navigator.Select("//e:EncryptedData", nsm);
-			var result = new Dictionary<string, Tuple<Cipher, byte[]>>(contentLinks.Count);
+			var contentLinks = navigator.Select("//e:EncryptedData", nsm);
+			var result = new Dictionary<string, (Cipher cipher, byte[] data)>(contentLinks.Count);
 			foreach (XPathNavigator link in contentLinks)
 			{
-				string em = link.SelectSingleNode("./e:EncryptionMethod/@Algorithm", nsm).Value;
-				string path = link.SelectSingleNode("./e:CipherData/e:CipherReference/@URI", nsm).Value;
+				var em = link.SelectSingleNode("./e:EncryptionMethod/@Algorithm", nsm).Value;
+				var path = link.SelectSingleNode("./e:CipherData/e:CipherReference/@URI", nsm).Value;
 				var cipher = GetCipher(em);
 				if (cipher == Cipher.Unknown)
-					throw new InvalidOperationException("This ebook uses unsupported encryption method: " + em);
+					throw new InvalidOperationException("This ebook is using unsupported encryption method: " + em);
 
-				result[path] = Tuple.Create(cipher, possibleKeys[0]);
+				result[path] = (cipher, possibleKeys[0]);
 			}
 			if (IsValidDecryptionKey(zipFile, result))
 				return result;
@@ -76,7 +73,7 @@ namespace Drm.Format.Epub
 			for (var i = 1; i < possibleKeys.Count; i++)
 			{
 				foreach (var key in keys)
-					result[key] = Tuple.Create(result[key].Item1, possibleKeys[i]);
+					result[key] = (result[key].Item1, possibleKeys[i]);
 				if (IsValidDecryptionKey(zipFile, result))
 					return result;
 			}
@@ -90,14 +87,14 @@ namespace Drm.Format.Epub
 
 			//http://tools.ietf.org/html/rfc3447#page-60
 			//version = rsaPrivateKey[0]
-			BigInteger n = ((DerInteger)rsaPrivateKey[1]).Value;
-			BigInteger e = ((DerInteger)rsaPrivateKey[2]).Value;
-			BigInteger d = ((DerInteger)rsaPrivateKey[3]).Value;
-			BigInteger p = ((DerInteger)rsaPrivateKey[4]).Value;
-			BigInteger q = ((DerInteger)rsaPrivateKey[5]).Value;
-			BigInteger dP = ((DerInteger)rsaPrivateKey[6]).Value;
-			BigInteger dQ = ((DerInteger)rsaPrivateKey[7]).Value;
-			BigInteger qInv = ((DerInteger)rsaPrivateKey[8]).Value;
+			var n = ((DerInteger)rsaPrivateKey[1]).Value;
+			var e = ((DerInteger)rsaPrivateKey[2]).Value;
+			var d = ((DerInteger)rsaPrivateKey[3]).Value;
+			var p = ((DerInteger)rsaPrivateKey[4]).Value;
+			var q = ((DerInteger)rsaPrivateKey[5]).Value;
+			var dP = ((DerInteger)rsaPrivateKey[6]).Value;
+			var dQ = ((DerInteger)rsaPrivateKey[7]).Value;
+			var qInv = ((DerInteger)rsaPrivateKey[8]).Value;
 			var rsa = new RsaEngine();
 			rsa.Init(false, new RsaPrivateCrtKeyParameters(n, e, d, p, q, dP, dQ, qInv));
 			return rsa;
@@ -107,8 +104,7 @@ namespace Drm.Format.Epub
 		{
 			if (ns == "http://www.w3.org/2001/04/xmlenc#aes128-cbc")
 				return Cipher.Aes128CbcWithGzip;
-			else
-				return Cipher.Unknown;
+			return Cipher.Unknown;
 		}
 
 	}

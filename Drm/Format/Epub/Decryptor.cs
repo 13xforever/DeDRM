@@ -39,11 +39,7 @@ namespace Drm.Format.Epub
 		private static byte[] DecryptAes128Ecb(byte[] data, byte[] key)
 		{
 			using (var cipher = new AesManaged {Mode = CipherMode.ECB, Key = key, Padding = PaddingMode.None})
-			{
-				var result = cipher.CreateDecryptor().TransformFinalBlock(data, 0, data.Length);
-				//var txt = Encoding.UTF8.GetString(result);
-				return result;
-			}
+				return cipher.CreateDecryptor().TransformFinalBlock(data, 0, data.Length);
 		}
 	}
 }

@@ -6,7 +6,7 @@ using Drm.Utils;
 
 namespace SimpleLauncher
 {
-	internal class Program
+	internal static class Program
 	{
 		private static void Main(string[] args)
 		{
@@ -15,10 +15,10 @@ namespace SimpleLauncher
 			var inFiles = GetInFiles(inPath);
 			foreach (var file in inFiles)
 			{
-				string bookName = Path.GetFileNameWithoutExtension(file);
+				var bookName = Path.GetFileNameWithoutExtension(file);
 				Console.Write(bookName.Substring(0, Math.Min(40, bookName.Length)));
 
-				BookFormat format = FormatGuesser.Guess(file);
+				var format = FormatGuesser.Guess(file);
 				Logger.PrintResult(format);
 
 				var scheme = SchemeGuesser.Guess(file, format);
@@ -33,7 +33,7 @@ namespace SimpleLauncher
 
 				ProcessResult processResult;
 				string error = null;
-				string outFileName = bookName;
+				var outFileName = bookName;
 				try
 				{
 					var processor = DrmProcessorFactory.Get(format, scheme);
@@ -84,7 +84,5 @@ namespace SimpleLauncher
 					yield return Path.Combine(dir, file);
 			}
 		}
-
-
 	}
 }

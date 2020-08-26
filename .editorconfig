@@ -1,0 +1,11 @@
+
+[*.cs]
+indent_style=tab
+indent_size=tab
+tab_width=4
+
+[*]
+
+# ReSharper properties
+resharper_csharp_indent_style=tab
+resharper_csharp_use_indent_from_vs=false

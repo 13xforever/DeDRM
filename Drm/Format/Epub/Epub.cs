@@ -27,11 +27,11 @@ namespace Drm.Format.Epub
 			}
 		}
 
-		public virtual string GetFileName(string originalFilePath) { return Path.GetFileName(originalFilePath); }
+		public virtual string GetFileName(string originalFilePath) => Path.GetFileName(originalFilePath);
 
-		public byte[] Strip(ZipFile zip, Dictionary<string, Tuple<Cipher, byte[]>> sessionKeys)
+		private byte[] Strip(ZipFile zip, Dictionary<string, (Cipher cipher, byte[] data)> sessionKeys)
 		{
-			IEnumerable<ZipEntry> entriesToDecrypt = zip.Entries.Where(e => !META_NAMES.Contains(e.FileName));
+			var entriesToDecrypt = zip.Entries.Where(e => !META_NAMES.Contains(e.FileName));
 			using (var output = new ZipFile(Encoding.UTF8))
 			{
 				output.UseZip64WhenSaving = Zip64Option.Never;
@@ -72,8 +72,7 @@ namespace Drm.Format.Epub
 					var rights = zip.Entries.FirstOrDefault(e => e.FileName.EndsWith("rights.xml"));
 					if (rights == null)
 					{
-						Guid guid;
-						if (Guid.TryParse(Path.GetFileNameWithoutExtension(filePath), out guid))
+						if (Guid.TryParse(Path.GetFileNameWithoutExtension(filePath), out _))
 							return PrivateKeyScheme.KoboNone;
 						return PrivateKeyScheme.None;
 					}
@@ -97,14 +96,14 @@ namespace Drm.Format.Epub
 			}
 		}
 
-		protected bool IsValidDecryptionKey(ZipFile zip, Dictionary<string, Tuple<Cipher, byte[]>> encryptedEntries)
+		protected bool IsValidDecryptionKey(ZipFile zip, Dictionary<string, (Cipher cipher, byte[] data)> encryptedEntries)
 		{
 			return IsValidDecryptionKey(zip, encryptedEntries, JpgExt, new byte[] {0xff, 0xd8, 0xff}) ||
 					IsValidDecryptionKey(zip, encryptedEntries, PngExt, new byte[] {0x89, 0x50, 0x4e, 0x47}) ||
 					IsValidDecryptionKey(zip, encryptedEntries, HtmExt, "<html");
 		}
 
-		private bool IsValidDecryptionKey(ZipFile zip, Dictionary<string, Tuple<Cipher, byte[]>> encryptedEntries, string[] extensions, byte[] signature)
+		private bool IsValidDecryptionKey(ZipFile zip, Dictionary<string, (Cipher cipher, byte[] data)> encryptedEntries, string[] extensions, byte[] signature)
 		{
 			var file = encryptedEntries.Keys.FirstOrDefault(e => extensions.Contains(Path.GetExtension(e).ToUpper()));
 			if (file == null) return false;
@@ -117,10 +116,11 @@ namespace Drm.Format.Epub
 			}
 		}
 
-		private bool IsValidDecryptionKey(ZipFile zip, Dictionary<string, Tuple<Cipher, byte[]>> encryptedEntries, string[] extensions, string substr)
+		private bool IsValidDecryptionKey(ZipFile zip, Dictionary<string, (Cipher cipher, byte[] data)> encryptedEntries, string[] extensions, string substr)
 		{
 			var file = encryptedEntries.Keys.FirstOrDefault(e => extensions.Contains(Path.GetExtension(e).ToUpper()));
-			if (file == null) return false;
+			if (file == null)
+				return false;
 
 			using (var stream = new MemoryStream())
 			{
@@ -131,12 +131,10 @@ namespace Drm.Format.Epub
 			}
 		}
 
-		protected abstract Dictionary<string, Tuple<Cipher, byte[]>> GetSessionKeys(ZipFile zipFile, string originalFilePath);
+		protected abstract Dictionary<string, (Cipher cipher, byte[] data)> GetSessionKeys(ZipFile zipFile, string originalFilePath);
 
 		protected virtual bool IsEncrypted(ZipFile zipFile, string originalFilePath)
-		{
-			return (zipFile["META-INF/rights.xml"] ?? zipFile["rights.xml"]) != null;
-		}
+			=> (zipFile["META-INF/rights.xml"] ?? zipFile["rights.xml"]) != null;
 
 		private static readonly HashSet<string> META_NAMES = new HashSet<string> {"mimetype", "rights.xml", "META-INF/rights.xml", "META-INF/encryption.xml" };
 		private static readonly string[] JpgExt = {".JPG", ".JPEG"};

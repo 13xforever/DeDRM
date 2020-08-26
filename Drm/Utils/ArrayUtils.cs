@@ -8,8 +8,11 @@ namespace Drm.Utils
 	{
 		public static T[] Copy<T>(this T[] source, long from, long length)
 		{
-			if (from < 0) throw new ArgumentOutOfRangeException("from");
-			if ((from + length) > source.LongLength) throw new ArgumentOutOfRangeException("length");
+			if (from < 0)
+				throw new ArgumentOutOfRangeException(nameof(@from));
+
+			if ((from + length) > source.LongLength)
+				throw new ArgumentOutOfRangeException(nameof(length));
 
 			var result = new T[length];
 			Array.Copy(source, from, result, 0, length);
@@ -18,11 +21,13 @@ namespace Drm.Utils
 
 		public static T[] Copy<T>(this T[] source, long from)
 		{
-			if (from < 0) from = source.LongLength + from;
+			if (from < 0)
+				from = source.LongLength + from;
 
-			if (from < 0 || from > source.LongLength) throw new ArgumentOutOfRangeException("from");
+			if (from < 0 || from > source.LongLength)
+				throw new ArgumentOutOfRangeException(nameof(@from));
 
-			long length = source.LongLength - from;
+			var length = source.LongLength - from;
 			var result = new T[length];
 			Array.Copy(source, from, result, 0, length);
 			return result;
@@ -38,14 +43,21 @@ namespace Drm.Utils
 		/// <returns>New array, containing subrange of <paramref name="source"/>, including element at <paramref name="from"/>, but excluding element <paramref name="to"/></returns>
 		public static T[] SubRange<T>(this T[] source, long from, long to)
 		{
-			if (from < 0) from = source.LongLength + from;
-			if (to < 0) to = source.LongLength + to;
+			if (from < 0)
+				from = source.LongLength + from;
+			if (to < 0)
+				to = source.LongLength + to;
 
-			if (from < 0) throw new ArgumentOutOfRangeException("from");
-			if (to > source.LongLength) throw new ArgumentOutOfRangeException("to");
-			if (from > to) throw new ArgumentException("Left border cannot be higher than Right border.", "from");
+			if (from < 0)
+				throw new ArgumentOutOfRangeException(nameof(@from));
 
-			long length = to - from;
+			if (to > source.LongLength)
+				throw new ArgumentOutOfRangeException(nameof(to));
+
+			if (from > to)
+				throw new ArgumentException("Left border cannot be higher than Right border.", nameof(@from));
+
+			var length = to - from;
 			var result = new T[length];
 			Array.Copy(source, from, result, 0, length);
 			return result;
@@ -54,14 +66,18 @@ namespace Drm.Utils
 		public static T[] Reverse<T>(this T[] source)
 		{
 			var result = new T[source.LongLength];
-			for (int i = 0; i < source.LongLength; i++) result[i] = source[source.LongLength - i - 1];
+			for (var i = 0; i < source.LongLength; i++)
+				result[i] = source[source.LongLength - i - 1];
 			return result;
 		}
 
 		public static string ToHexString(this byte[] source)
 		{
-			if (source == null) return null;
-			if (source.Length == 0) return "";
+			if (source == null)
+				return null;
+
+			if (source.Length == 0)
+				return "";
 
 			var result = new StringBuilder(source.Length);
 			foreach (var b in source)
@@ -71,9 +87,14 @@ namespace Drm.Utils
 
 		public static bool StartsWith(this byte[] source, byte[] pattern)
 		{
-			if (source == null || pattern == null) return false;
-			if (pattern.Length == 0) return false;
-			if (source.Length < pattern.Length) return false;
+			if (source == null || pattern == null)
+				return false;
+
+			if (pattern.Length == 0)
+				return false;
+
+			if (source.Length < pattern.Length)
+				return false;
 
 			return source.Copy(0, pattern.Length).SequenceEqual(pattern);
 		}

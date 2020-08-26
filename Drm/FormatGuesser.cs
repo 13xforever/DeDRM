@@ -12,8 +12,10 @@ namespace Drm
 			var ext = (Path.GetExtension(filePath) ?? "").ToLower();
 			if (ext == ".pdb")
 				return BookFormat.EReader;
+
 			if (ext == ".epub" || ext == ".kepub")
 				return BookFormat.EPub;
+
 			try
 			{
 				using (var zip = new ZipFile(filePath, Encoding.UTF8))

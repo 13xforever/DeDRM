@@ -57,7 +57,7 @@ namespace Drm.Format.EReader
 				numberOfRecords = BitConverter.ToUInt16(buf, 0);
 				records = new List<PdbRecordInfo>(numberOfRecords);
 				buf = new byte[8];
-				for (int i = 0; i < numberOfRecords; i++)
+				for (var i = 0; i < numberOfRecords; i++)
 				{
 					stream.Read(buf, 0, 8);
 					records.Add(new PdbRecordInfo(buf));
@@ -69,8 +69,8 @@ namespace Drm.Format.EReader
 
 		public byte[] GetSection(int sectionNumber)
 		{
-			long endOfSectionOffset = sectionNumber + 1 == numberOfRecords ? rawData.Length : records[sectionNumber + 1].offset;
-			long startOfSectionOffset = records[sectionNumber].offset;
+			var endOfSectionOffset = sectionNumber + 1 == numberOfRecords ? rawData.Length : records[sectionNumber + 1].offset;
+			var startOfSectionOffset = records[sectionNumber].offset;
 			return rawData.SubRange(startOfSectionOffset, endOfSectionOffset);
 		}
 
@@ -92,7 +92,7 @@ namespace Drm.Format.EReader
 
 		private static DateTime PalmTimeToDateTime(long palmTime)
 		{
-			int startDate = 1904;
+			var startDate = 1904;
 			if ((palmTime & 0x80000000) > 0) startDate = 1970;
 			return new DateTime(startDate, 1, 1).AddSeconds(palmTime);
 		}

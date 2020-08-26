@@ -4,7 +4,7 @@ namespace Drm
 {
 	public class PassThrough : IDrmProcessor
 	{
-		public byte[] Strip(byte[] bookData, string originalFilePath) { return bookData; }
-		public string GetFileName(string originalFilePath) { return Path.GetFileName(originalFilePath); }
+		public byte[] Strip(byte[] bookData, string originalFilePath) => bookData;
+		public string GetFileName(string originalFilePath) => Path.GetFileName(originalFilePath);
 	}
 }

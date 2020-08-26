@@ -1,13 +1,18 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28010.2016
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30413.136
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Drm", "Drm\Drm.csproj", "{9D016AB6-96E9-41BF-9677-C34FCE195B60}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Drm", "Drm\Drm.csproj", "{9D016AB6-96E9-41BF-9677-C34FCE195B60}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimpleLauncher", "SimpleLauncher\SimpleLauncher.csproj", "{994DDFB3-C4E9-4DE4-AD08-A1D0B56702AD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SimpleLauncher", "SimpleLauncher\SimpleLauncher.csproj", "{994DDFB3-C4E9-4DE4-AD08-A1D0B56702AD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Drm.Tests", "Drm.Tests\Drm.Tests.csproj", "{ECF6049A-E49A-45BC-A119-73A96DE86BB2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Drm.Tests", "Drm.Tests\Drm.Tests.csproj", "{ECF6049A-E49A-45BC-A119-73A96DE86BB2}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{7FC6B8A5-A412-4109-A167-B3EBA58F5A35}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -7,7 +7,7 @@ namespace SimpleLauncher
 	{
 		internal static void PrintResult(BookFormat format)
 		{
-			string result = format.ToString();
+			var result = format.ToString();
 			ConsoleColor? color;
 			switch (format)
 			{
@@ -24,7 +24,7 @@ namespace SimpleLauncher
 
 		internal static void PrintResult(PrivateKeyScheme drm)
 		{
-			string result = drm.ToString();
+			var result = drm.ToString();
 			ConsoleColor? color;
 			switch (drm)
 			{
@@ -45,7 +45,7 @@ namespace SimpleLauncher
 
 		internal static void PrintResult(ProcessResult status)
 		{
-			string result = status.ToString();
+			var result = status.ToString();
 			ConsoleColor? color = null;
 			switch (status)
 			{
