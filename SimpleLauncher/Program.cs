@@ -45,7 +45,10 @@ namespace SimpleLauncher
 						Directory.CreateDirectory(outDir);
 
 					outFileName = processor.GetFileName(file).ReplaceInvalidChars();
-					var outFilePath = Path.Combine(outDir, outFileName);
+					var outFilePath = Path.Combine(outDir, scheme.ToString());
+					if (!Directory.Exists(outFilePath))
+						Directory.CreateDirectory(outFilePath);
+					outFilePath = Path.Combine(outFilePath, outFileName);
 					File.WriteAllBytes(outFilePath, result);
 					processResult = ProcessResult.Success;
 				}
