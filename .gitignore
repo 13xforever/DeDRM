@@ -31,3 +31,4 @@ packages/
 .vs/
 **/Properties/launchSettings.json
 .idea/
+Distrib/
