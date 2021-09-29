@@ -12,7 +12,7 @@ namespace SimpleLauncher
 		{
 			var inPath = args.Length > 0
 				? args
-				: new[] {@".\*", Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Kobo", "Kobo Desktop Edition","kepub") };
+				: new[] {Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Kobo", "Kobo Desktop Edition","kepub") };
 			Console.WriteLine("Removing DRM...");
 			var inFiles = GetInFiles(inPath);
 			foreach (var file in inFiles)
@@ -43,7 +43,8 @@ namespace SimpleLauncher
 					var result = processor.Strip(data, file);
 
 					//var outDir = Path.Combine(Path.GetDirectoryName(file), "out");
-					var outDir = @"C:\Documents\Downloads\Books\out";
+					//var outDir = @"C:\Documents\Downloads\Books\out";
+					var outDir = @".\output";
 					if (!Directory.Exists(outDir))
 						Directory.CreateDirectory(outDir);
 
@@ -66,6 +67,7 @@ namespace SimpleLauncher
 					Console.WriteLine("\tError: " + error);
 			}
 			Console.WriteLine("Done.");
+			Console.ReadKey(true);
 		}
 
 		private static IEnumerable<string> GetInFiles(string[] inPath)
