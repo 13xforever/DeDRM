@@ -18,7 +18,7 @@ namespace SimpleLauncher
 			foreach (var file in inFiles)
 			{
 				var bookName = Path.GetFileNameWithoutExtension(file);
-				Console.Write(bookName.Substring(0, Math.Min(40, bookName.Length)));
+				Console.Write(bookName[.. Math.Min(40, bookName.Length)]);
 
 				var format = FormatGuesser.Guess(file);
 				Logger.PrintResult(format);
@@ -70,11 +70,11 @@ namespace SimpleLauncher
 			Console.ReadKey(true);
 		}
 
-		private static IEnumerable<string> GetInFiles(string[] inPath)
+		private static IEnumerable<string> GetInFiles(IEnumerable<string> inPath)
 		{
-			string dir, mask;
 			foreach (var path in inPath)
 			{
+				string dir, mask;
 				if (Directory.Exists(path))
 				{
 					dir = path;
@@ -83,7 +83,7 @@ namespace SimpleLauncher
 				else
 				{
 					dir = Path.GetDirectoryName(path);
-					mask = Path.GetFileName(path);
+					mask = Path.GetFileName(path) ?? "";
 				}
 				if (!Directory.Exists(dir))
 					continue;
