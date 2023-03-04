@@ -44,7 +44,7 @@ namespace SimpleLauncher
 
 					//var outDir = Path.Combine(Path.GetDirectoryName(file), "out");
 					//var outDir = @"C:\Documents\Downloads\Books\out";
-					var outDir = @".\output";
+					var outDir = @".\out";
 					if (!Directory.Exists(outDir))
 						Directory.CreateDirectory(outDir);
 
