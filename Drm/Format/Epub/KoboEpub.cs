@@ -5,94 +5,85 @@ using System.IO;
 using System.Security.Cryptography;
 using Ionic.Zip;
 
-namespace Drm.Format.Epub
+namespace Drm.Format.Epub;
+
+public class KoboEpub : Epub, IDisposable
 {
-	public class KoboEpub : Epub, IDisposable
+	public KoboEpub()
 	{
-		public KoboEpub()
+		var dataSource = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Kobo\Kobo Desktop Edition\Kobo.sqlite");
+		connection = new($"Data Source={dataSource}");
+		connection.Open();
+		masterKeys = KoboMasterKeys.Retrieve(connection);
+	}
+
+	protected override Dictionary<string, (Cipher cipher, byte[] data)> GetSessionKeys(ZipFile zipFile, string originalFilePath)
+	{
+		var bookId = GetBookId(originalFilePath);
+		var encryptedSessionKeys = new Dictionary<string, byte[]>();
+		using (var cmd = new SQLiteCommand($"select * from content_keys where volumeId='{bookId}'", connection))
+		using (var reader = cmd.ExecuteReader())
+			while (reader.Read())
+			{
+				var elementId = (string)reader["elementId"];
+				var elementKey = Convert.FromBase64String((string)reader["elementKey"]);
+				encryptedSessionKeys[elementId] = elementKey;
+			}
+		foreach (var masterKey in masterKeys)
 		{
-			var dataSource = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Kobo\Kobo Desktop Edition\Kobo.sqlite");
-			connection = new SQLiteConnection("Data Source=" + dataSource);
-			connection.Open();
-			MasterKeys = KoboMasterKeys.Retrieve(connection);
+			var sessionKeys = new Dictionary<string, (Cipher cipher, byte[] data)>();
+			foreach (var key in encryptedSessionKeys.Keys)
+				sessionKeys[key] = (Cipher.Aes128Ecb, Decryptor.DecryptAes128Ecb(encryptedSessionKeys[key], masterKey, PaddingMode.None));
+			if (IsValidDecryptionKey(zipFile, sessionKeys))
+				return sessionKeys;
 		}
 
-		protected override Dictionary<string, (Cipher cipher, byte[] data)> GetSessionKeys(ZipFile zipFile, string originalFilePath)
-		{
-			var bookId = GetBookId(originalFilePath);
-			var encryptedSessionKeys = new Dictionary<string, byte[]>();
-			using (var cmd = new SQLiteCommand("select * from content_keys where volumeId='" + bookId + "'", connection))
-			using (var reader = cmd.ExecuteReader())
-				while (reader.Read())
-				{
-					var elementId = (string)reader["elementId"];
-					var elementKey = Convert.FromBase64String((string)reader["elementKey"]);
-					encryptedSessionKeys[elementId] = elementKey;
-				}
-			foreach (var masterKey in MasterKeys)
-			{
-				var sessionKeys = new Dictionary<string, (Cipher cipher, byte[] data)>();
-				foreach (var key in encryptedSessionKeys.Keys)
-					sessionKeys[key] = (Cipher.Aes128Ecb, Decryptor.DecryptAes128Ecb(encryptedSessionKeys[key], masterKey, PaddingMode.None));
-				if (IsValidDecryptionKey(zipFile, sessionKeys))
-					return sessionKeys;
-			}
+		throw new InvalidOperationException("Couldn't find valid book decryption key.");
+	}
 
-			throw new InvalidOperationException("Couldn't find valid book decryption key.");
-		}
-
-		public override string GetFileName(string originalFilePath)
-		{
-			var bookId = GetBookId(originalFilePath);
-			using (var cmd = new SQLiteCommand("select Title, Subtitle from content where ContentID='" + bookId + "'", connection))
-			using (var reader = cmd.ExecuteReader())
-			{
-				if (!reader.Read())
-					throw new InvalidOperationException("Couldn't identify book record in local Kobo database.");
-
-				var title = reader[0] as string;
-				var subtitle = reader[1] as string;
-				if (!string.IsNullOrEmpty(subtitle))
-					title = $"{title} - {subtitle}";
-				return title + ".epub";
-			}
-		}
-
-		private Guid GetBookId(string originalFilePath)
-		{
-			var filename = Path.GetFileNameWithoutExtension(originalFilePath);
-			if (Guid.TryParse(filename, out var bookId))
-			{
-				using (var cmd = new SQLiteCommand("select count(ContentID) from content where ContentID='" + bookId + "'", connection))
-				{
-					var rows = cmd.ExecuteScalar() as long?;
-					if (rows > 0)
-						return bookId;
-				}
-			}
-			else
-			{
-				var filesize = new FileInfo(originalFilePath).Length;
-				using (var cmd = new SQLiteCommand("select ContentID, Title from content where ___FileSize=" + filesize, connection))
-				using (var reader = cmd.ExecuteReader())
-				{
-					if (reader.Read())
-						return Guid.Parse((string)reader[0]);
-				}
-			}
+	public override string GetFileName(string originalFilePath)
+	{
+		var bookId = GetBookId(originalFilePath);
+		using var cmd = new SQLiteCommand($"select Title, Subtitle from content where ContentID='{bookId}'", connection);
+		using var reader = cmd.ExecuteReader();
+		if (!reader.Read())
 			throw new InvalidOperationException("Couldn't identify book record in local Kobo database.");
-		}
 
-		private readonly SQLiteConnection connection;
-		private readonly List<byte[]> MasterKeys;
+		var title = reader[0] as string;
+		if (reader[1] is string {Length: >0} subtitle)
+			title = $"{title} - {subtitle}";
+		return $"{title}.epub";
+	}
 
-		public void Dispose()
+	private Guid GetBookId(string originalFilePath)
+	{
+		var filename = Path.GetFileNameWithoutExtension(originalFilePath);
+		if (Guid.TryParse(filename, out var bookId))
 		{
-			if (connection == null)
-				return;
-
-			connection.Close();
-			connection.Dispose();
+			using var cmd = new SQLiteCommand($"select count(ContentID) from content where ContentID='{bookId}'", connection);
+			if (cmd.ExecuteScalar() as long? > 0L)
+				return bookId;
 		}
+		else
+		{
+			var filesize = new FileInfo(originalFilePath).Length;
+			using var cmd = new SQLiteCommand($"select ContentID, Title from content where ___FileSize={filesize}", connection);
+			using var reader = cmd.ExecuteReader();
+			if (reader.Read())
+				return Guid.Parse((string)reader[0]);
+		}
+		throw new InvalidOperationException("Couldn't identify book record in local Kobo database.");
+	}
+
+	private readonly SQLiteConnection connection;
+	private readonly List<byte[]> masterKeys;
+
+	public void Dispose()
+	{
+		if (connection == null)
+			return;
+
+		connection.Close();
+		connection.Dispose();
 	}
 }

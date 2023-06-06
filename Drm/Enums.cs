@@ -1,25 +1,24 @@
-namespace Drm
+namespace Drm;
+
+public enum ProcessResult
 {
-	public enum ProcessResult
-	{
-		Skipped,
-		Success,
-		Fail,
-	}
+	Skipped,
+	Success,
+	Fail,
+}
 
-	public enum BookFormat
-	{
-		Unknown,
-		EReader,
-		EPub,
-	}
+public enum BookFormat
+{
+	Unknown,
+	EReader,
+	EPub,
+}
 
-	public enum PrivateKeyScheme
-	{
-		Unknown,
-		None,
-		Adept,
-		Kobo,
-		KoboNone,
-	}
+public enum PrivateKeyScheme
+{
+	Unknown,
+	None,
+	Adept,
+	Kobo,
+	KoboNone,
 }

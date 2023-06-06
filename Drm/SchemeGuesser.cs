@@ -1,18 +1,13 @@
 using Drm.Format.Epub;
 
-namespace Drm
+namespace Drm;
+
+public static class SchemeGuesser
 {
-	public static class SchemeGuesser
-	{
-		public static PrivateKeyScheme Guess(string filePath, BookFormat format)
+	public static PrivateKeyScheme Guess(string filePath, BookFormat format)
+		=> format switch
 		{
-			switch (format)
-			{
-				case BookFormat.EPub:
-					return Epub.GuessScheme(filePath);
-				default:
-					return PrivateKeyScheme.Unknown;
-			}
-		}
-	}
+			BookFormat.EPub => Epub.GuessScheme(filePath),
+			_ => PrivateKeyScheme.Unknown
+		};
 }
