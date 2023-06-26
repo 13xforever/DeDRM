@@ -8,7 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="DotNetZip" Version="1.16.0" />
-    <PackageReference Include="Microsoft.Windows.Compatibility" Version="7.0.3" />
+    <PackageReference Include="Microsoft.Windows.Compatibility" Version="7.0.4" />
     <PackageReference Include="Portable.BouncyCastle" Version="1.9.0" />
     <PackageReference Include="System.Data.SQLite.Core" Version="1.0.118" />
     <PackageReference Include="System.Management" Version="7.0.2" />
