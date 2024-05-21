@@ -18,8 +18,9 @@ internal static class Decryptor
 
 	private static byte[] DecryptAes128CbcWithGzip(byte[] data, byte[] key)
 	{
-		using var cipher = new AesManaged { Mode = CipherMode.CBC, Key = key };
-		var gzippedFile = cipher.CreateDecryptor().TransformFinalBlock(data, 0, data.Length).Skip(16).ToArray();
+		using var cipher = Aes.Create();
+		cipher.Mode = CipherMode.CBC;
+		var gzippedFile = cipher.CreateDecryptor(key, null).TransformFinalBlock(data, 0, data.Length)[16..];
 		using var inStream = new MemoryStream(gzippedFile);
 		using var zipStream = new DeflateStream(inStream, CompressionMode.Decompress);
 		using var outStream = new MemoryStream();
@@ -29,7 +30,9 @@ internal static class Decryptor
 
 	internal static byte[] DecryptAes128Ecb(byte[] data, byte[] key, PaddingMode paddingMode = PaddingMode.PKCS7)
 	{
-		using var cipher = new AesManaged {Mode = CipherMode.ECB, Key = key, Padding = paddingMode};
-		return cipher.CreateDecryptor().TransformFinalBlock(data, 0, data.Length);
+		using var cipher = Aes.Create();
+		cipher.Mode = CipherMode.ECB;
+		cipher.Padding = paddingMode;
+		return cipher.CreateDecryptor(key, null).TransformFinalBlock(data, 0, data.Length);
 	}
 }

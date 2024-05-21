@@ -1,4 +1,7 @@
-﻿using Drm.Format.EReader;
+﻿using System;
+using System.Linq;
+using Drm.Format.Epub;
+using Drm.Format.EReader;
 using Drm.Utils;
 using NUnit.Framework;
 
@@ -35,5 +38,20 @@ public class UtilsTests
 			Assert.That(e2, Is.Not.EqualTo(EReaderCompression.PalmDoc));
 			Assert.That(e2, Is.Not.EqualTo(EReaderCompression.Zlib));
 		});
+	}
+
+	[Test]
+	public void SerialConvertTest()
+	{
+		var val = 0x1122334455667788ul;
+		var result = BitConverter.GetBytes((uint)val).Reverse().ToArray();
+		Assert.That(result, Is.EquivalentTo(new byte[] { 0x55, 0x66, 0x77, 0x88 }));
+	}
+
+	[Test, Explicit("Manual debug")]
+	public void AdeptMasterKeyTest()
+	{
+		var result = AdeptMasterKeys.Retrieve();
+		Assert.That(result, Is.Not.Null.And.Not.Empty);
 	}
 }

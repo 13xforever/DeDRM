@@ -24,5 +24,5 @@ internal class EReaderImageInfo
 		return r.ToString();
 	}
 
-	private static readonly HashSet<char> invalidChars = new(Path.GetInvalidFileNameChars());
+	private static readonly HashSet<char> invalidChars = [..Path.GetInvalidFileNameChars()];
 }

@@ -1,7 +1,9 @@
+using System;
+
 namespace Drm;
 
 public interface IDrmProcessor
 {
-	byte[] Strip(byte[] bookData, string originalFilePath);
+	ReadOnlySpan<byte> Strip(ReadOnlySpan<byte> bookData, string originalFilePath);
 	string GetFileName(string originalFilePath);
 }

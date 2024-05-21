@@ -6,12 +6,17 @@ namespace Drm.Utils;
 
 public static class PathUtils
 {
+	private static readonly HashSet<char> InvalidChars = [..Path.GetInvalidFileNameChars()];
+	
 	public static string ReplaceInvalidChars(this string filename)
-	{
-		var result = new StringBuilder(filename.Length);
-		var invalidChars = new HashSet<char>(Path.GetInvalidFileNameChars());
-		foreach (var c in filename)
-			result.Append(invalidChars.Contains(c) ? '_' : c);
-		return result.ToString();
-	}
+		=> string.Create(filename.Length, filename,
+			(span, fname) =>
+			{
+				for (var i = 0; i < fname.Length; i++)
+				{
+					var c = fname[i];
+					span[i] = InvalidChars.Contains(c) ? '_' : c;
+				}	
+			}
+		);
 }

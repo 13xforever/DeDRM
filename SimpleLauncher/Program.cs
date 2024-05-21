@@ -12,7 +12,7 @@ internal static class Program
 	{
 		var inPath = args.Length > 0
 			? args
-			: new[] {Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Kobo", "Kobo Desktop Edition","kepub") };
+			: [Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Kobo", "Kobo Desktop Edition", "kepub")];
 		Console.WriteLine("Removing DRM...");
 		var inFiles = GetInFiles(inPath);
 		foreach (var file in inFiles)
@@ -26,7 +26,7 @@ internal static class Program
 			var scheme = SchemeGuesser.Guess(file, format);
 			Logger.PrintResult(scheme);
 
-			if (format == BookFormat.Unknown)
+			if (format is BookFormat.Unknown)
 			{
 				Logger.PrintResult(ProcessResult.Skipped);
 				Console.WriteLine();
@@ -53,7 +53,7 @@ internal static class Program
 				if (!Directory.Exists(outFilePath))
 					Directory.CreateDirectory(outFilePath);
 				outFilePath = Path.Combine(outFilePath, outFileName);
-				File.WriteAllBytes(outFilePath, result);
+				File.WriteAllBytes(outFilePath, result.ToArray());
 				processResult = ProcessResult.Success;
 			}
 			catch(Exception e)
@@ -63,7 +63,7 @@ internal static class Program
 			}
 			Logger.PrintResult(processResult);
 			Logger.PrintResult(outFileName);
-			if (processResult == ProcessResult.Fail)
+			if (processResult is ProcessResult.Fail)
 				Console.WriteLine("\tError: " + error);
 		}
 		Console.WriteLine("Done.");

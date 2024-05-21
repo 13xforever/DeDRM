@@ -1,34 +1,32 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Management;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Runtime.Intrinsics;
+using System.Runtime.Intrinsics.X86;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Win32;
+using Aes = System.Security.Cryptography.Aes;
 
 namespace Drm.Format.Epub;
 
-internal class AuthData
-{
-	public byte[] privateKey;
-	public string pkcs12Store;
-}
-
-public static class AdeptMasterKeys
+public static partial class AdeptMasterKeys
 {
 	public static List<byte[]> Retrieve()
 	{
 		var systemDriveSerial = GetSystemDriveSerialNumber();
-		var cpuInfo = GetCpuInfo();
 		var username = Environment.UserName;
-		var entropy = MakeEntropy(systemDriveSerial, cpuInfo, username);
+		var entropy = new byte[32];
+		FillEntropy(entropy, systemDriveSerial, username);
 		using var deviceKey = Registry.CurrentUser.OpenSubKey(DeviceKey);
-		if (deviceKey == null)
+		if (deviceKey is null)
 			throw new InvalidOperationException("Adobe Digital Editions isn't activated");
 
-		var deviceKeyData = (byte[])deviceKey.GetValue("key");
-		if (deviceKeyData == null)
+		var deviceKeyData = (byte[]?)deviceKey.GetValue("key");
+		if (deviceKeyData is null)
 			throw new InvalidOperationException("Adobe Digital Editions isn't activated");
 		
 		var decryptedKey = ProtectedData.Unprotect(deviceKeyData, entropy, DataProtectionScope.CurrentUser);
@@ -39,75 +37,71 @@ public static class AdeptMasterKeys
 	private static List<byte[]> DecryptData(byte[] key, List<byte[]> data)
 	{
 		var result = new List<byte[]>(data.Count);
+		using var cipher = Aes.Create();
+		cipher.Mode = CipherMode.CBC;
 		foreach (var privateKey in data)
 		{
-			using var cipher = new AesManaged {Mode = CipherMode.CBC, Key = key};
-			var decryptedPrivateKey = cipher.CreateDecryptor().TransformFinalBlock(privateKey, 0, privateKey.Length);
-			result.Add(decryptedPrivateKey.Skip(26).ToArray());
+			var decryptedPrivateKey = cipher.CreateDecryptor(key, null).TransformFinalBlock(privateKey, 0, privateKey.Length);
+			result.Add(decryptedPrivateKey[26..]);
 		}
 		return result;
 	}
 
 	private static List<byte[]> GetPrivateLicenses()
 	{
+		using var activationKey = Registry.CurrentUser.OpenSubKey(ActivationKey);
+		if (activationKey is null)
+			throw new InvalidOperationException("ADE activation is corrupted or absent.");
+			
 		var result = new List<byte[]>();
-		using (var activationKey = Registry.CurrentUser.OpenSubKey(ActivationKey))
+		foreach (var subKeyName in activationKey.GetSubKeyNames())
 		{
-			if (activationKey == null) throw new InvalidOperationException("ADE activation is corrupted or absent.");
-			foreach (var subKeyName in activationKey.GetSubKeyNames())
-			{
-				using var subKey = activationKey.OpenSubKey(subKeyName);
-				if (subKey?.GetValue("")?.ToString() is not "credentials")
-					continue;
-				
-				var authData = new AuthData();
-				foreach (var keyName in subKey.GetSubKeyNames())
-				{
-					using var key = subKey.OpenSubKey(keyName);
-					if (key is null)
-						continue;
+			using var subKey = activationKey.OpenSubKey(subKeyName);
+			if (subKey?.GetValue("")?.ToString() is not "credentials")
+				continue;
 
-					if (key.GetValue("")?.ToString() is "privateLicenseKey"
-					    && key.GetValue("value") is string plkValue)
-						authData.privateKey = Convert.FromBase64String(plkValue);
-					else if (key.GetValue("")?.ToString() is "pkcs12"
-					         && key.GetValue("value") is string pkcs12Value)
-						authData.pkcs12Store = pkcs12Value;
-				}
-				if (authData.pkcs12Store is { Length: > 0 })
-					result.Add(authData.privateKey);
+			string? pkcs12Store = null;
+			byte[]? privateKey = null;
+			foreach (var keyName in subKey.GetSubKeyNames())
+			{
+				using var key = subKey.OpenSubKey(keyName);
+				if (key is null)
+					continue;
+
+				if (key.GetValue("")?.ToString() is "privateLicenseKey"
+				    && key.GetValue("value") is string plkValue)
+					privateKey = Convert.FromBase64String(plkValue);
+				else if (key.GetValue("")?.ToString() is "pkcs12"
+				         && key.GetValue("value") is string pkcs12Value)
+					pkcs12Store = pkcs12Value;
 			}
+			if (pkcs12Store is { Length: >0 } && privateKey is {Length: >0})
+				result.Add(privateKey);
 		}
-		if (result.Count == 0)
+		if (result.Count is 0)
 			throw new InvalidOperationException("Couldn't find private license key!");
 
 		return result;
 	}
 
-	private static byte[] MakeEntropy(ulong serial, CpuInfo cpuInfo, string user)
+	private static void FillEntropy(Span<byte> result, ulong serial, ReadOnlySpan<char> user)
 	{
 		//4 bytes
-		var result = new byte[32];
-		BitConverter.GetBytes((uint)serial).Reverse().ToArray().CopyTo(result, 0);
+		var serialReg = Vector64.Create(serial).AsByte();
+		(result[0], result[1], result[2], result[3]) = (serialReg[3], serialReg[2], serialReg[1], serialReg[0]);
 		//12 bytes
-		Encoding.ASCII.GetBytes(cpuInfo.vendor).CopyTo(result, 4);
+		var vendorSlice = result[4..16];
+		Encoding.ASCII.TryGetBytes(CpuInfo.Vendor, vendorSlice, out _);
 		//3 bytes
-		cpuInfo.familyModelStepping.CopyTo(result, 16);
+		CpuInfo.FamilyModelStepping.CopyTo(result[16..19]);
 		//13 bytes
-		Encoding.Unicode.GetBytes(user).Take(26).Where((value, idx) => idx % 2 == 0).ToArray().CopyTo(result, 19);
-		return result;
-	}
-
-	private static CpuInfo GetCpuInfo()
-	{
-		var result = new CpuInfo();
-		using var cpu = new ManagementObject(@"Win32_Processor.DeviceID=""CPU0""");
-		cpu.Get();
-		result.vendor = cpu["Manufacturer"].ToString();
-		var sig = cpu["ProcessorId"].ToString();
-		for (byte i = 0; i < 3; i++)
-			result.familyModelStepping[i] = Convert.ToByte(sig.Substring(10 + i * 2, 2), 16);
-		return result;
+		if (user.Length > 13)
+			user = user[..13];
+		Span<byte> tmp = stackalloc byte[13 * sizeof(char)];
+		Encoding.Unicode.TryGetBytes(user, tmp, out var nameByteCount);
+		var nameDest = result[19..32];
+		for (var i = 0; i < nameByteCount; i += 2)
+			nameDest[i / 2] = tmp[i];
 	}
 
 	private static ulong GetSystemDriveSerialNumber()
@@ -116,20 +110,37 @@ public static class AdeptMasterKeys
 		using var dsk = new ManagementObject(@"Win32_LogicalDisk.DeviceID=""" + systemDriveLetter + @":""");
 		dsk.Get();
 		var numberAsHexString = dsk["VolumeSerialNumber"].ToString();
-		if (!HexString.IsMatch(numberAsHexString))
+		if (!HexStringPattern().IsMatch(numberAsHexString))
 			throw new ArgumentException($"Serial number for volume {systemDriveLetter} isn't a valid hexadecimal string ({numberAsHexString})");
 
 		return Convert.ToUInt64(numberAsHexString, 16);
 	}
 
-	private static readonly Regex HexString = new(@"\A\b[0-9a-fA-F]+\b\Z");
-
-	private class CpuInfo
+	[SkipLocalsInit]
+	private static class CpuInfo
 	{
-		public string vendor;
-		public readonly byte[] familyModelStepping = new byte[3];
+		public static readonly string Vendor;
+		public static readonly byte[] FamilyModelStepping = new byte[3];
+
+		static CpuInfo()
+		{
+			var r = X86Base.CpuId(0, 0);
+			var reg = Vector128.Create(r.Ebx, r.Edx, r.Ecx, 0);
+			Span<byte> vendorId = stackalloc byte[4 * sizeof(int)];
+			reg.AsByte().CopyTo(vendorId);
+			Vendor = Encoding.ASCII.GetString(vendorId[..(r.Eax - 1)]);
+
+			var processorId = X86Base.CpuId(1, 0).Eax;
+			for (byte i = 0; i < 3; i++)
+			{
+				FamilyModelStepping[2 - i] = (byte)processorId;
+				processorId >>= 8;
+			}
+		}
 	}
 
-	private const string DeviceKey = "Software\\Adobe\\Adept\\Device";
-	private const string ActivationKey = "Software\\Adobe\\Adept\\Activation";
+	[GeneratedRegex(@"\A\b[0-9a-fA-F]+\b\Z")]
+	private static partial Regex HexStringPattern();
+	private const string DeviceKey = @"Software\Adobe\Adept\Device";
+	private const string ActivationKey = @"Software\Adobe\Adept\Activation";
 }

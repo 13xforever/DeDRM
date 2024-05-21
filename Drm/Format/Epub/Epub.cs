@@ -14,9 +14,9 @@ public abstract class Epub: IDrmProcessor
 {
 	public static event Action<string> OnParseIssue;
 
-	public byte[] Strip(byte[] bookData, string originalFilePath)
+	public ReadOnlySpan<byte> Strip(ReadOnlySpan<byte> bookData, string originalFilePath)
 	{
-		using var bookStream = new MemoryStream(bookData);
+		using var bookStream = new MemoryStream(bookData.ToArray());
 		using var zip = ZipFile.Read(bookStream, new() {Encoding = Encoding.UTF8});
 		if (!IsEncrypted(zip, originalFilePath))
 			return bookData;
@@ -76,10 +76,10 @@ public abstract class Epub: IDrmProcessor
 			rights.Extract(stream);
 			stream.Seek(0, SeekOrigin.Begin);
 			var xml = XDocument.Load(stream);
-			if (xml.Root.Name.LocalName is "kdrm")
+			if (xml.Root?.Name.LocalName is "kdrm")
 				return PrivateKeyScheme.Kobo;
 			
-			if (xml.Root.Name.Namespace == "http://ns.adobe.com/adept")
+			if (xml.Root?.Name.Namespace == "http://ns.adobe.com/adept")
 				return PrivateKeyScheme.Adept;
 			return PrivateKeyScheme.Unknown;
 		}
@@ -91,8 +91,8 @@ public abstract class Epub: IDrmProcessor
 
 	protected bool IsValidDecryptionKey(ZipFile zip, Dictionary<string, (Cipher cipher, byte[] data)> encryptedEntries)
 	{
-		return IsValidDecryptionKey(zip, encryptedEntries, JpgExt, new byte[] {0xff, 0xd8, 0xff}) ||
-		       IsValidDecryptionKey(zip, encryptedEntries, PngExt, new byte[] {0x89, 0x50, 0x4e, 0x47}) ||
+		return IsValidDecryptionKey(zip, encryptedEntries, JpgExt, [0xff, 0xd8, 0xff]) ||
+		       IsValidDecryptionKey(zip, encryptedEntries, PngExt, [0x89, 0x50, 0x4e, 0x47]) ||
 		       IsValidDecryptionKey(zip, encryptedEntries, HtmExt, "<html");
 	}
 
@@ -140,14 +140,12 @@ public abstract class Epub: IDrmProcessor
 	protected virtual bool IsEncrypted(ZipFile zipFile, string originalFilePath)
 		=> (zipFile["META-INF/rights.xml"] ?? zipFile["rights.xml"]) is not null;
 
-	private static readonly HashSet<string> META_NAMES = new() {"mimetype", "rights.xml", "META-INF/rights.xml", "META-INF/encryption.xml" };
-	private static readonly string[] JpgExt = {".JPG", ".JPEG"};
-	private static readonly string[] PngExt = {".PNG"};
-	private static readonly string[] HtmExt = {".HTML", ".HTM", ".XHTML"};
-	private static readonly HashSet<string> UncompressibleExts = new(StringComparer.InvariantCultureIgnoreCase)
-	{
-		".jpg",
-		".jpeg",
-		".png",
-	};
+	private static readonly HashSet<string> META_NAMES = ["mimetype", "rights.xml", "META-INF/rights.xml", "META-INF/encryption.xml"];
+	private static readonly string[] JpgExt = [".JPG", ".JPEG"];
+	private static readonly string[] PngExt = [".PNG"];
+	private static readonly string[] HtmExt = [".HTML", ".HTM", ".XHTML"];
+	private static readonly HashSet<string> UncompressibleExts = new(
+		[".jpg", ".jpeg", ".png"],
+		StringComparer.InvariantCultureIgnoreCase
+	);
 }

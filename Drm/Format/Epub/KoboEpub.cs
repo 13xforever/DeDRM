@@ -3,11 +3,12 @@ using System.Collections.Generic;
 using System.Data.SQLite;
 using System.IO;
 using System.Security.Cryptography;
+using System.Threading.Tasks;
 using Ionic.Zip;
 
 namespace Drm.Format.Epub;
 
-public class KoboEpub : Epub, IDisposable
+public class KoboEpub : Epub, IDisposable, IAsyncDisposable
 {
 	public KoboEpub()
 	{
@@ -37,7 +38,6 @@ public class KoboEpub : Epub, IDisposable
 			if (IsValidDecryptionKey(zipFile, sessionKeys))
 				return sessionKeys;
 		}
-
 		throw new InvalidOperationException("Couldn't find valid book decryption key.");
 	}
 
@@ -80,10 +80,11 @@ public class KoboEpub : Epub, IDisposable
 
 	public void Dispose()
 	{
-		if (connection == null)
-			return;
-
-		connection.Close();
 		connection.Dispose();
+	}
+
+	public async ValueTask DisposeAsync()
+	{
+		await connection.DisposeAsync();
 	}
 }

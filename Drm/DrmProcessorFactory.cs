@@ -7,31 +7,23 @@ public static class DrmProcessorFactory
 {
 	public static IDrmProcessor Get(BookFormat format, PrivateKeyScheme scheme)
 	{
-		if (scheme == PrivateKeyScheme.None)
+		if (scheme is PrivateKeyScheme.None)
 			return PassThrough.Value;
 
-		switch (format)
+		return format switch
 		{
-			case BookFormat.EPub:
-				switch (scheme)
-				{
-					case PrivateKeyScheme.Adept:
-						return AdeptEPub.Value;
-					case PrivateKeyScheme.Kobo:
-					case PrivateKeyScheme.KoboNone:
-						return KoboEPub.Value;
-					default:
-						throw new NotSupportedException("Unsupported combination of book format and DRM scheme.");
-				}
-			case BookFormat.EReader:
-				switch (scheme)
-				{
-					default:
-						throw new NotSupportedException("Unsupported combination of book format and DRM scheme.");
-				}
-			default:
-				throw new NotSupportedException("Unsupported book format.");
-		}
+			BookFormat.EPub => scheme switch
+			{
+				PrivateKeyScheme.Adept => AdeptEPub.Value,
+				PrivateKeyScheme.Kobo or PrivateKeyScheme.KoboNone => KoboEPub.Value,
+				_ => throw new NotSupportedException("Unsupported combination of book format and DRM scheme.")
+			},
+			BookFormat.EReader => throw (scheme switch
+			{
+				_ => new NotSupportedException("Unsupported combination of book format and DRM scheme.")
+			}),
+			_ => throw new NotSupportedException("Unsupported book format.")
+		};
 	}
 
 	private static readonly Lazy<IDrmProcessor> PassThrough = new(() => new PassThrough());

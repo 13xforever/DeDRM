@@ -42,7 +42,7 @@ public class AdeptEpub : Epub
 			var rsa = GetRsaEngine(masterKey);
 			var bookKey = rsa.ProcessBlock(contentKey, 0, contentKey.Length);
 			//Padded as per RSAES-PKCS1-v1_5
-			if (bookKey[bookKey.Length - 17] == 0x00)
+			if (bookKey[^17] is 0x00)
 				possibleKeys.Add(bookKey.Copy(bookKey.Length - 16));
 		}
 		if (possibleKeys.Count == 0)
