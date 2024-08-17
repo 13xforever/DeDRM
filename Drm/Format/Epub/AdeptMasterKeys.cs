@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Management;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -106,8 +107,8 @@ public static partial class AdeptMasterKeys
 
 	private static ulong GetSystemDriveSerialNumber()
 	{
-		var systemDriveLetter = Environment.SystemDirectory[0];
-		using var dsk = new ManagementObject(@"Win32_LogicalDisk.DeviceID=""" + systemDriveLetter + @":""");
+		var systemDriveLetter = Environment.SystemDirectory[..1];
+		using var dsk = new ManagementObject($@"Win32_LogicalDisk.DeviceID=""{systemDriveLetter}""");
 		dsk.Get();
 		var numberAsHexString = dsk["VolumeSerialNumber"].ToString();
 		if (!HexStringPattern().IsMatch(numberAsHexString))
